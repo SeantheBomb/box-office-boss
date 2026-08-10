@@ -1,0 +1,42 @@
+{
+  "genres": {
+    "Action": { "subgenres": ["Heist", "Spy", "Disaster", "Martial Arts", "Car Chase"], "budget": [15000000, 60000000], "vfx": [150, 600], "length": [95, 130], "ratings": ["PG-13", "R"] },
+    "Comedy": { "subgenres": ["Rom-Com", "Buddy", "Workplace", "Mockumentary", "Road Trip"], "budget": [5000000, 25000000], "vfx": [5, 60], "length": [85, 110], "ratings": ["PG", "PG-13", "R"] },
+    "Horror": { "subgenres": ["Haunting", "Slasher", "Creature", "Found Footage", "Psychological"], "budget": [3000000, 15000000], "vfx": [30, 200], "length": [80, 105], "ratings": ["PG-13", "R"] },
+    "Drama": { "subgenres": ["Courtroom", "Sports", "Period", "Family Saga", "Biopic"], "budget": [8000000, 35000000], "vfx": [5, 50], "length": [100, 150], "ratings": ["PG", "PG-13", "R"] },
+    "Sci-Fi": { "subgenres": ["Space Opera", "Time Travel", "Dystopia", "First Contact", "Cyberpunk"], "budget": [20000000, 80000000], "vfx": [300, 900], "length": [100, 145], "ratings": ["PG-13", "R"] },
+    "Thriller": { "subgenres": ["Submarine", "Conspiracy", "Kidnapping", "Serial Killer", "Financial"], "budget": [10000000, 40000000], "vfx": [40, 250], "length": [95, 125], "ratings": ["PG-13", "R"] },
+    "Family": { "subgenres": ["Talking Animal", "Adventure", "Holiday", "Sports Underdog", "Fantasy"], "budget": [10000000, 45000000], "vfx": [100, 500], "length": [85, 105], "ratings": ["G", "PG"] },
+    "Western": { "subgenres": ["Revenge", "Outlaw", "Frontier", "Neo-Western", "Cattle Drive"], "budget": [8000000, 30000000], "vfx": [10, 80], "length": [95, 140], "ratings": ["PG-13", "R"] }
+  },
+  "titleGrammars": [
+    "{adj} {noun}",
+    "The {noun}",
+    "{noun} {noun2}",
+    "The Last {noun}",
+    "{place}: {subtitle}",
+    "{noun} of {place}",
+    "A {adj} {noun}",
+    "{verb-ing} {noun}"
+  ],
+  "titleWords": {
+    "adj": ["Dread", "Silent", "Crimson", "Broken", "Midnight", "Savage", "Golden", "Hollow", "Iron", "Velvet", "Feral", "Lucky", "Reckless", "Frozen", "Electric", "Bitter", "Glorious", "Rogue"],
+    "noun": ["Depth", "Reckoning", "Vengeance", "Wedding", "Protocol", "Summit", "Harvest", "Empire", "Rod", "Gambit", "Furnace", "Cartel", "Orchard", "Beacon", "Verdict", "Stampede", "Circuit", "Masquerade", "Bunker", "Detour"],
+    "noun2": ["Rising", "Falls", "Unleashed", "Forever", "Zero", "Down", "City", "Squad", "Inferno", "Odyssey"],
+    "place": ["Bakersfield", "Neptune Station", "The Yukon", "Vega Prime", "Cape Sorrow", "Little Milan", "The Badlands", "Pier 19", "Mount Hollow", "The Undersuite"],
+    "subtitle": ["First Blood Type", "No Refunds", "The Musical Isn't", "Dead Reckoning", "Second Mortgage", "The Reckoning Before Christmas"],
+    "verb-ing": ["Chasing", "Burying", "Stealing", "Forgetting", "Surviving", "Marrying", "Auditing"],
+    "hookNoun": ["SUBMARINE", "HEIST", "DINOSAUR", "WEDDING", "GHOST", "TAXES", "VOLCANO", "PARROT", "PROM", "CULT", "CASINO", "BLIZZARD"]
+  },
+  "loglineFrames": [
+    "it's got everything: {theme1}, {theme2}, and a third-act {setPiece}",
+    "one man. One {setPiece}. Zero permits",
+    "imagine {theme1} meets {theme2}, but somehow classier",
+    "it's about {theme1}, but REALLY it's about {theme2}",
+    "we open on a {setPiece}. The audience is already crying"
+  ],
+  "themes": ["betrayal", "redemption", "family", "greed", "second chances", "revenge", "forbidden love", "hubris", "the American dream", "grief, but fun grief"],
+  "setPieces": ["explosion", "courtroom breakdown", "dance number", "car flip", "tearful reunion", "double-cross", "haunted elevator", "wedding brawl", "underwater knife fight"],
+  "twists": ["with a bigger boat", "in space", "but the dog lives", "told backwards", "with a Christmas setting for tax reasons", "and the villain is the economy"],
+  "sequelSubtitles": ["II", "2: Back in Business", "Returns", "Resurrection", "The Next Chapter", "Forever", "II: The Reckoning Continues"]
+}

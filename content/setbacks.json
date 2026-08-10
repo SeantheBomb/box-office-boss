@@ -1,0 +1,11 @@
+{
+  "kinds": {
+    "directorRecall": { "weight": 1, "delayDays": [7, 21], "costFactor": [0.03, 0.08], "needs": "director" },
+    "castInjury": { "weight": 2, "delayDays": [5, 14], "costFactor": [0.02, 0.06], "needs": "cast" },
+    "castDispute": { "weight": 2, "delayDays": [2, 10], "costFactor": [0.01, 0.05], "needs": "cast", "cooperationDriven": true },
+    "location": { "weight": 1.5, "delayDays": [4, 12], "costFactor": [0.02, 0.05] },
+    "equipment": { "weight": 1.5, "delayDays": [1, 6], "costFactor": [0.015, 0.04] }
+  },
+  "qualityHitOnCancelTalent": -8,
+  "moraleHitPerSetback": -4
+}

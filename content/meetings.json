@@ -1,0 +1,127 @@
+{
+  "pitch": {
+    "scene": "meetingRoom",
+    "title": "Pitch Meeting",
+    "probes": [
+      { "id": "director", "line": "Who do you see directing?", "reveals": "idealDirector" },
+      { "id": "rival", "line": "Word is a rival's circling something similar. Why yours?", "reveals": "fadStatus" },
+      { "id": "soul", "line": "What's it really about?", "reveals": "themes" }
+    ],
+    "positions": [
+      { "id": "greenlight", "line": "Let's do it. Full price, straight to script.", "writerMood": 15 },
+      { "id": "cheap", "line": "Draft-first deal. Half now, half if I like page thirty.", "writerMood": -5 },
+      { "id": "pass", "line": "It's not for us. But keep bringing me the weird ones.", "writerMood": -2 },
+      { "id": "passJoke", "line": "I'd rather greenlight a documentary about this meeting.", "writerMood": -12 }
+    ],
+    "reactions": {
+      "accept": ["{writer} tries to play it cool and fails beautifully.", "{writer} shakes your hand with both hands, then a third time."],
+      "counter": ["{writer} squints. 'Half now... and a producer credit for my mother.'", "{writer} exhales through their nose for a full six seconds."],
+      "walk": ["{writer} closes the folder with terrible gentleness. 'Pinnacle returns my calls.'"]
+    }
+  },
+  "casting": {
+    "scene": "meetingRoom",
+    "title": "Casting Interview",
+    "opens": ["{cast} arrives {lateness} minutes late, in character as someone punctual.", "{cast} enters, compliments the room, sits in your chair."],
+    "asks": ["I don't do mornings. Mornings are for people whose faces bounce back.", "My rate went up. My last movie? We don't discuss it, and that costs extra.", "I want this part. I want it the way I want the rider honored: completely."],
+    "plays": [
+      { "id": "meet", "line": "Full rate. The rider too. Even the weird parts." },
+      { "id": "counterLow", "line": "Sixty-five percent — but top billing and the poster's good side." },
+      { "id": "backend", "line": "Scale now, points on the back end. Bet on yourself." },
+      { "id": "flatter", "line": "You were the best thing in {flatterTitle} and you know it." }
+    ],
+    "reactions": {
+      "accept": ["A slow smile. 'When do we shoot?'", "'Finally. Someone with taste and a checkbook.'"],
+      "acceptGrudge": ["'Fine. But I'm remembering this number.' She will.", "'Done. My agent will cry, which I enjoy.'"],
+      "demand": ["'The number AND the rider. The parrot is non-negotiable.'"],
+      "walk": ["'Call Pinnacle. Oh wait — they called me.' Exit, perfect posture."]
+    }
+  },
+  "board": {
+    "scene": "meetingRoom",
+    "title": "Board Review",
+    "defenses": [
+      { "id": "data", "line": "Look at the trend line, not the headline. The slate's working." },
+      { "id": "blame", "line": "That one's on me. It won't happen twice." },
+      { "id": "blameDirector", "line": "The director went forty shots over. Direct your questions there." }
+    ],
+    "reactions": {
+      "satisfied": ["Nods around the table. One member takes a second pastry: the highest honor.", "'Continue.' From this board, that's a parade."],
+      "neutral": ["Pens click. Notes are made. The notes are about you.", "'Noted.' The word hangs there like weather."],
+      "displeased": ["Someone underlines something twice. You can hear it.", "The chairman looks at his watch, which is engraved with your predecessor's initials."]
+    }
+  },
+  "productionReview": {
+    "scene": "stage",
+    "title": "Production Review",
+    "problems": {
+      "behind": "We're {days} days behind. The director calls it 'finding the film.' I call it {cost}.",
+      "over": "Burn rate's up {pct}%. The {department} budget is now performance art.",
+      "friction": "{cast} and the director communicate exclusively through a PA named Dev. Dev is 22. Dev is breaking.",
+      "scope": "The director wants {shots} more VFX shots. The phrase 'trust me' was used {trust} times."
+    },
+    "plays": [
+      { "id": "approve", "line": "Give them what they need. Quality is the receipt." },
+      { "id": "hold", "line": "The answer is the schedule. The schedule is the answer." },
+      { "id": "split", "line": "Half. And I want it in writing that half is generous." },
+      { "id": "threaten", "line": "Remind everyone that 'wrapped early' is also a career highlight." }
+    ],
+    "reactions": {
+      "good": ["The director salutes with a rolled-up shot list.", "'You won't regret it.' You might."],
+      "ok": ["Grumbling, but the productive kind.", "The clipboard comes down. Détente."],
+      "bad": ["Somewhere, a trailer door closes with intent.", "The set gets very quiet, then very expensive."]
+    }
+  },
+  "convention": {
+    "scene": "conStage",
+    "title": "Convention Showcase",
+    "reveals": [
+      { "id": "tease", "line": "Title and logo tease. Leave them hungry.", "hype": [4, 10], "risk": 0 },
+      { "id": "star", "line": "Bring out the star. Let the room lose its mind.", "hype": [8, 18], "risk": 0.2 },
+      { "id": "trailer", "line": "Full trailer. All chips in.", "hype": [-10, 30], "risk": 0.35 }
+    ],
+    "answers": [
+      { "id": "commit", "line": "Canon. All of it. Yes to everything." },
+      { "id": "deflect", "line": "Great question. Next question." }
+    ]
+  },
+  "awards": {
+    "scene": "dinner",
+    "title": "Awards Ceremony",
+    "tableTalk": [
+      { "id": "manage", "line": "Win or lose, you made something real. Also please don't check your phone during the montage." },
+      { "id": "promise", "line": "If you win tonight, I'm greenlighting the sequel from this chair." },
+      { "id": "toast", "line": "To the movie — and to whoever finds my seat filler a drink." }
+    ],
+    "winLines": ["The room stands. Your table screams. The orchestra tries to play someone off and fails.", "Confetti. Tears. Someone thanks a parrot."],
+    "loseLines": ["Polite applause. Your nominee's smile could cut glass.", "The camera finds your table at the exact wrong moment."]
+  },
+  "execStandup": {
+    "scene": "office",
+    "title": "Executive Standup",
+    "plays": [
+      { "id": "commit", "line": "Give me until {deadline}. I'll have it fixed or framed." },
+      { "id": "pushback", "line": "The board hired a gambler. This is what the middle of a bet looks like." },
+      { "id": "charm", "line": "Have I mentioned that tie is board-quality? Sit. Coffee?" }
+    ],
+    "reactions": {
+      "good": ["'I'll hold you to it.' They write the date on a cuff.", "A grunt that, in executive, means hope."],
+      "neutral": ["'Hm.' The exec pockets a desk mint on the way out.", "'The board reads the trades, you know.' They know."],
+      "bad": ["'I'll soften it for the board. This week.'", "The door closes at a volume with a message in it."]
+    }
+  },
+  "producersStandup": {
+    "scene": "office",
+    "title": "Producers Standup",
+    "statusLines": {
+      "fine": ["{title} is fine. Genuinely. I'm suspicious too.", "{title}: on time, on budget. I've bought a lottery ticket."],
+      "warn": ["{title} is... {cast} is directing their own scenes now. Nobody asked them to.", "{title} is one rainy day from being a documentary about itself."],
+      "bad": ["{title} needs a decision or a priest.", "{title}: the good news is the footage is beautiful. That's also the bill."]
+    },
+    "priorities": [
+      { "id": "cost", "label": "Trim the burn" },
+      { "id": "schedule", "label": "Protect the schedule" },
+      { "id": "quality", "label": "Buy quality" }
+    ]
+  }
+}

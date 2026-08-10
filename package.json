@@ -1,0 +1,24 @@
+{
+  "name": "box-office-boss",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Box Office Boss — satirical Hollywood studio sim. Diagetic UI, fully procedural, Player + Editor in one page.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "simlab": "node --experimental-strip-types tools/simlab.mts",
+    "deploy": "npm run build && wrangler pages deploy dist --project-name=box-office-boss --branch=master"
+  },
+  "dependencies": {
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "vite": "^6.0.0",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.112.0"
+  }
+}

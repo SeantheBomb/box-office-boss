@@ -1,0 +1,61 @@
+{
+  "nameBanks": {
+    "firstM": ["Blaze", "Chad", "Dirk", "Rock", "Sterling", "Ace", "Maximo", "Brick", "Lance", "Rex", "Judd", "Colt", "Dash", "Grant", "Hugo", "Ivan", "Jasper", "Kip", "Leo", "Monty", "Nash", "Otto", "Percy", "Quinn", "Ridge", "Silas", "Thad", "Ulysses", "Vince", "Wade"],
+    "firstF": ["Marlowe", "Tabitha", "Vesper", "Cleo", "Delphine", "Estelle", "Farrah", "Gilda", "Harlow", "Ingrid", "Juniper", "Kitty", "Lux", "Mercy", "Nova", "Opal", "Paloma", "Quincy", "Ramona", "Sable", "Tempest", "Uma", "Velvet", "Winnie", "Xena", "Yvette", "Zelda", "Bianca", "Coco", "Dixie"],
+    "firstN": ["Storm", "Ember", "Onyx", "Sage", "Wren", "Indigo", "Phoenix", "Rain", "Sky", "Vale"],
+    "last": ["Cannon", "Vex", "Quill", "Sterling", "Blackwood", "Fontaine", "Ashford", "Belmont", "Castellano", "Drummond", "Everhart", "Falco", "Granger", "Hollister", "Ives", "Jetstream", "Killborne", "Lockwood", "Marchetti", "Nightingale", "Ostrander", "Pemberton", "Ravenscroft", "Silverman", "Thorne", "Underwood", "Vanderbilt", "Whitlock", "Yancey", "Zhao", "Okafor", "Nakamura", "Reyes", "Lindqvist", "Moreau", "Kowalski"],
+    "vfxPrefix": ["Pixel", "Render", "Ghost", "Neon", "Quantum", "Molten", "Vapor", "Chrome", "Prism", "Static"],
+    "vfxSuffix": ["Forge", "Farm", "Works", "House", "Foundry", "Collective", "Labs", "Union", "Machine", "Garage"],
+    "outlets": ["The Daily Reel", "Varietal Trade", "Cinema Snob Weekly", "The Hollywood Ledger", "Popcorn Quarterly", "The Silver Screener"],
+    "rivalStudios": ["Pinnacle Pictures", "Meridian Studios", "Golden Gate Films", "Colossus Entertainment", "Starcrest Media"]
+  },
+  "physiques": ["chiseled", "wiry", "imposing", "elfin", "rugged", "statuesque", "compact", "towering", "soft-spoken but jacked"],
+  "riders": [
+    "no early mornings",
+    "my parrot has a trailer",
+    "script approval for my character's hats",
+    "a personal smoothie sommelier",
+    "all mirrors on set must be 'flattering'",
+    "someone to laugh at my jokes (union rate)",
+    "my trailer must face magnetic north",
+    "no eye contact before noon",
+    "a body double for emotional scenes",
+    "fresh orchids that are never referred to as 'the flowers'",
+    "my dog gets a producer credit",
+    "only sparkling water from a specific glacier"
+  ],
+  "castArchetypes": [
+    { "id": "method-perfectionist", "weight": 2, "rating": [65, 95], "cooperation": [10, 40], "improv": [40, 80], "rate": [40000, 90000], "fame": [50, 90] },
+    { "id": "bankable-star", "weight": 2, "rating": [45, 70], "cooperation": [40, 75], "improv": [20, 60], "rate": [60000, 120000], "fame": [70, 100] },
+    { "id": "workhorse", "weight": 3, "rating": [50, 75], "cooperation": [70, 100], "improv": [30, 70], "rate": [8000, 30000], "fame": [20, 60] },
+    { "id": "loose-cannon", "weight": 2, "rating": [40, 85], "cooperation": [5, 30], "improv": [70, 100], "rate": [20000, 70000], "fame": [40, 85] },
+    { "id": "rising-talent", "weight": 3, "rating": [55, 90], "cooperation": [60, 95], "improv": [40, 90], "rate": [5000, 20000], "fame": [10, 45] },
+    { "id": "faded-legend", "weight": 1, "rating": [60, 85], "cooperation": [30, 60], "improv": [30, 60], "rate": [15000, 45000], "fame": [55, 80] }
+  ],
+  "directorArchetypes": [
+    { "id": "auteur", "weight": 2, "rating": [70, 95], "vfxShots": [20, 120], "castSize": [3, 6], "locations": [4, 9], "reshoots": [2, 5], "castCooperation": [30, 60] },
+    { "id": "blockbuster-machine", "weight": 2, "rating": [50, 75], "vfxShots": [400, 900], "castSize": [5, 9], "locations": [6, 12], "reshoots": [1, 3], "castCooperation": [55, 80] },
+    { "id": "journeyman", "weight": 3, "rating": [45, 65], "vfxShots": [60, 250], "castSize": [4, 7], "locations": [3, 7], "reshoots": [0, 2], "castCooperation": [65, 90] },
+    { "id": "chaos-visionary", "weight": 1, "rating": [55, 95], "vfxShots": [100, 500], "castSize": [4, 8], "locations": [8, 15], "reshoots": [3, 8], "castCooperation": [20, 45] },
+    { "id": "indie-darling", "weight": 2, "rating": [60, 90], "vfxShots": [5, 60], "castSize": [2, 5], "locations": [1, 4], "reshoots": [0, 2], "castCooperation": [70, 95] }
+  ],
+  "writerArchetypes": [
+    { "id": "genre-specialist", "weight": 3, "rating": [55, 85], "genreCount": [1, 2] },
+    { "id": "chameleon", "weight": 2, "rating": [45, 70], "genreCount": [3, 5] },
+    { "id": "prestige-pen", "weight": 1, "rating": [70, 95], "genreCount": [1, 2] },
+    { "id": "pulp-factory", "weight": 2, "rating": [35, 60], "genreCount": [2, 4] }
+  ],
+  "producerArchetypes": [
+    { "id": "penny-pincher", "weight": 2, "length": [0.8, 0.95], "cost": [0.75, 0.9], "revenue": [0.85, 1.0], "rating": [40, 60] },
+    { "id": "prestige-producer", "weight": 2, "length": [1.05, 1.3], "cost": [1.1, 1.4], "revenue": [1.0, 1.3], "rating": [65, 90] },
+    { "id": "steady-hand", "weight": 3, "length": [0.95, 1.05], "cost": [0.95, 1.05], "revenue": [0.95, 1.1], "rating": [55, 75] },
+    { "id": "hype-machine", "weight": 1, "length": [0.9, 1.1], "cost": [1.0, 1.2], "revenue": [1.1, 1.5], "rating": [45, 65] }
+  ],
+  "vfxTiers": [
+    { "id": "boutique", "weight": 2, "dailyCost": [8000, 15000], "maxShots": [2, 5], "rating": [70, 95] },
+    { "id": "midsize", "weight": 3, "dailyCost": [15000, 30000], "maxShots": [6, 14], "rating": [50, 75] },
+    { "id": "farm", "weight": 2, "dailyCost": [30000, 60000], "maxShots": [15, 30], "rating": [35, 60] }
+  ],
+  "counts": { "cast": 36, "directors": 14, "writers": 12, "producers": 10, "vfx": 6, "critics": 5 },
+  "criticPersonas": ["acid", "gushing", "academic", "populist", "contrarian"]
+}

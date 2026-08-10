@@ -1,0 +1,72 @@
+{
+  "startingCash": 60000000,
+  "startingPatience": 70,
+  "patienceTiers": [55, 35, 15],
+  "quarterlyExpectationBase": 2000000,
+  "quarterlyExpectationGrowth": 1.12,
+  "patienceQuarterHit": 12,
+  "patienceQuarterReward": 6,
+  "patienceFlopHit": 5,
+  "patienceAwardReward": 8,
+  "overheadDaily": 25000,
+  "phases": {
+    "scriptDays": [21, 42],
+    "scriptCostFactor": 0.02,
+    "preproDays": [21, 42],
+    "preproCostFactor": 0.08,
+    "greenlightScriptFactor": 0.015,
+    "greenlightPreproFactor": 0.03,
+    "greenlightProductionFactor": 0.1
+  },
+  "production": {
+    "baseDaysPerLocation": 6,
+    "baseDailyCostFactor": 0.005,
+    "setbackChancePerWeek": 0.16,
+    "cooperationSetbackWeight": 0.5
+  },
+  "post": {
+    "baseDays": 35,
+    "reshootDays": 7,
+    "reshootCostFactor": 0.04,
+    "marketingTiers": [
+      { "id": "quiet", "label": "Quiet release", "cost": 500000, "reach": 0.25 },
+      { "id": "standard", "label": "Standard campaign", "cost": 3000000, "reach": 0.55 },
+      { "id": "blitz", "label": "Full blitz", "cost": 9000000, "reach": 0.85 }
+    ]
+  },
+  "release": {
+    "ticketPrice": 12,
+    "turnout": 0.2,
+    "studioCut": 0.55,
+    "theatersMax": 4200,
+    "theatricalWeeks": 6,
+    "decay": [1.0, 0.55, 0.34, 0.22, 0.14, 0.08],
+    "competitionSplit": 0.35,
+    "seasonMods": { "Winter": 0.85, "Spring": 1.0, "Summer": 1.25, "Fall": 1.0 },
+    "fallCriticBonus": 0.15
+  },
+  "distribute": {
+    "delayWeeks": 10,
+    "unitPriceWholesale": 10,
+    "unitPriceRetail": 18,
+    "priceTiers": [
+      { "id": "premium", "label": "Premium pricing", "mult": 1.4, "volumeMult": 0.6 },
+      { "id": "standard", "label": "Standard pricing", "mult": 1.0, "volumeMult": 1.0 },
+      { "id": "bargain", "label": "Bargain bin blitz", "mult": 0.6, "volumeMult": 1.6 }
+    ]
+  },
+  "awards": {
+    "cashPrize": 4000000,
+    "week": 44,
+    "categories": ["Best Picture", "Best Director", "Best Performance", "Best Stunt Ensemble", "Best Visual Effects"]
+  },
+  "convention": { "week": 30 },
+  "rivals": {
+    "maxConcurrent": 3,
+    "greenlightCheckDays": 14,
+    "cashFloor": 2000000,
+    "startingCash": 30000000
+  },
+  "writers": { "pitchIntervalDays": [6, 16] },
+  "sequel": { "minProfit": 5000000, "fanScoreMin": 55 }
+}

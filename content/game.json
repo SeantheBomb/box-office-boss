@@ -1,0 +1,10 @@
+{
+  "studioName": "Boss Films",
+  "secondsPerDay": 45,
+  "speeds": [0, 1, 2, 4],
+  "meetingLeadDays": [2, 5],
+  "slotOrder": ["morning", "afternoon", "evening"],
+  "autosaveEveryDays": 7,
+  "maxInbox": 60,
+  "setbackKinds": ["directorRecall", "castInjury", "castDispute", "location", "equipment"]
+}
