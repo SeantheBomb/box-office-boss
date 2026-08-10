@@ -1,0 +1,7 @@
+name = "box-office-boss"
+compatibility_date = "2026-08-01"
+pages_build_output_dir = "dist"
+
+[[kv_namespaces]]
+binding = "CONTENT"
+id = "PLACEHOLDER_SET_AT_DEPLOY"
