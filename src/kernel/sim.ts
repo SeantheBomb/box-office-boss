@@ -173,6 +173,10 @@ export class Sim {
     s.totalRevenue += amount;
   }
 
+  bossName(): string {
+    return this.state.flags.profile?.boss ?? "Boss";
+  }
+
   toneTier(): number {
     const tiers = this.content.economy.patienceTiers as number[];
     let tier = 0;

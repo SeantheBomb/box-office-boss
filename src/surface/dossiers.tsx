@@ -5,7 +5,7 @@ import type { Sim } from "../kernel/sim";
 import type { Movie, Person } from "../kernel/types";
 import { calDate, SEASONS } from "../kernel/types";
 import { money } from "../kernel/text";
-import { Portrait } from "./portraits";
+import { Portrait2 } from "./portraits2";
 import { FunnelReport } from "./reports";
 
 export type OpenDossier = (kind: "movie" | "person", id: string) => void;
@@ -209,7 +209,7 @@ export function PersonDossier({ sim, personId, openDossier, bump }: { sim: Sim; 
   return (
     <div class="doss">
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 8 }}>
-        <Portrait seed={p.portraitSeed} size={84} role={p.role} mood={Math.sign(rel)} />
+        <Portrait2 person={p} size={96} mood={Math.sign(rel)} />
         <div>
           <h3 style={{ border: "none", margin: 0 }}>{p.name}</h3>
           <div style={{ fontSize: 12, color: "#666" }}>

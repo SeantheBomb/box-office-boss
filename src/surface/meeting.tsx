@@ -5,9 +5,11 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Sim } from "../kernel/sim";
 import type { SimEvent } from "../kernel/types";
 import { MeetingSession, type Beat } from "../kernel/meetings";
-import { Portrait, GroupPortrait } from "./portraits";
+import { GroupPortrait } from "./portraits";
+import { Portrait2 } from "./portraits2";
 import type { OpenDossier } from "./dossiers";
 import { money } from "../kernel/text";
+import { audio, guessSentiment } from "./audio";
 
 const SCENE_CLASS: Record<string, string> = {
   meetingRoom: "meetingRoom",
@@ -24,6 +26,19 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
   const sceneClass = SCENE_CLASS[meetingDef.scene] ?? "meetingRoom";
   const person = beat.portraitId ? sim.person(beat.portraitId) : undefined;
   const movie = sim.movie(event.data.movieId);
+  // meeting sting on entry; premiere gets the paparazzi treatment
+  useEffect(() => {
+    audio.sfx("meeting", 0.8);
+    if (event.type === "premiere") setTimeout(() => audio.sfx("camera"), 600);
+    if (event.type === "awards") setTimeout(() => audio.sfx("applause", 0.5), 800);
+  }, [event.id]);
+  // every beat, the counterpart mumbles their feelings — Animal Crossing rules
+  useEffect(() => {
+    const sentiment = guessSentiment(beat.text);
+    if (person) audio.mumble(person, sentiment);
+    if (/applause|erupt|room stands|screams/i.test(beat.text)) audio.sfx("applause", 0.7);
+    if (/flashbulb|paparazzi|camera/i.test(beat.text)) audio.sfx("camera", 0.6);
+  }, [beat]);
   // number keys pick lines; Enter continues — no mouse required, no ambiguity about what's clickable
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -44,7 +59,7 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
     <div class={`meeting ${sceneClass}`}>
       <div class="counterpart">
         {person ? (
-          <Portrait seed={person.portraitSeed} size={110} role={person.role} mood={Math.sign(person.relationship)} />
+          <Portrait2 person={person} size={132} mood={Math.sign(person.relationship)} />
         ) : (
           <GroupPortrait kind={beat.portraitId ?? "board"} size={110} />
         )}
@@ -77,7 +92,7 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
           <div class="choices">
             <div class="choose-label">— choose your line —</div>
             {(beat.choices ?? []).map((c, i) => (
-              <button key={c.id} onClick={() => setBeat(session.choose(c.id))}>
+              <button key={c.id} onClick={() => { audio.sfx("click", 0.5); setBeat(session.choose(c.id)); }}>
                 <span class="choice-num">{i + 1}</span> “{c.line}”
               </button>
             ))}

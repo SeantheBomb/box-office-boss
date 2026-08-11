@@ -1,0 +1,138 @@
+{
+  "sfx": {
+    "click": "/audio/sfx/click.mp3",
+    "window_open": "/audio/sfx/window_open.mp3",
+    "window_close": "/audio/sfx/window_close.mp3",
+    "email": "/audio/sfx/email.mp3",
+    "reminder": "/audio/sfx/reminder.mp3",
+    "meeting": "/audio/sfx/meeting.mp3",
+    "cash": "/audio/sfx/cash.mp3",
+    "success": "/audio/sfx/success.mp3",
+    "failure": "/audio/sfx/failure.mp3",
+    "applause": "/audio/sfx/applause.mp3",
+    "camera": "/audio/sfx/camera.mp3",
+    "dock_bounce": "/audio/sfx/dock_bounce.mp3",
+    "toast": "/audio/sfx/toast.mp3",
+    "typewriter": "/audio/sfx/typewriter.mp3",
+    "phone": "/audio/sfx/phone.mp3",
+    "stamp": "/audio/sfx/stamp.mp3"
+  },
+  "ambience": {
+    "office": "/audio/ambience/office.mp3",
+    "meetingRoom": "/audio/ambience/meetingRoom.mp3",
+    "stage": "/audio/ambience/stage.mp3",
+    "conStage": "/audio/ambience/conStage.mp3",
+    "dinner": "/audio/ambience/dinner.mp3"
+  },
+  "music": {
+    "office": "/audio/music/office.mp3",
+    "meetingRoom": "/audio/music/meetingRoom.mp3",
+    "stage": "/audio/music/stage.mp3",
+    "conStage": "/audio/music/conStage.mp3",
+    "dinner": "/audio/music/dinner.mp3"
+  },
+  "mumbles": {
+    "f1": {
+      "happy": [
+        "/audio/mumbles/f1_happy_0.mp3",
+        "/audio/mumbles/f1_happy_1.mp3",
+        "/audio/mumbles/f1_happy_2.mp3"
+      ],
+      "neutral": [
+        "/audio/mumbles/f1_neutral_0.mp3",
+        "/audio/mumbles/f1_neutral_1.mp3",
+        "/audio/mumbles/f1_neutral_2.mp3"
+      ],
+      "grumpy": [
+        "/audio/mumbles/f1_grumpy_0.mp3",
+        "/audio/mumbles/f1_grumpy_1.mp3",
+        "/audio/mumbles/f1_grumpy_2.mp3"
+      ]
+    },
+    "f2": {
+      "happy": [
+        "/audio/mumbles/f2_happy_0.mp3",
+        "/audio/mumbles/f2_happy_1.mp3",
+        "/audio/mumbles/f2_happy_2.mp3"
+      ],
+      "neutral": [
+        "/audio/mumbles/f2_neutral_0.mp3",
+        "/audio/mumbles/f2_neutral_1.mp3",
+        "/audio/mumbles/f2_neutral_2.mp3"
+      ],
+      "grumpy": [
+        "/audio/mumbles/f2_grumpy_0.mp3",
+        "/audio/mumbles/f2_grumpy_1.mp3",
+        "/audio/mumbles/f2_grumpy_2.mp3"
+      ]
+    },
+    "f3": {
+      "happy": [
+        "/audio/mumbles/f3_happy_0.mp3",
+        "/audio/mumbles/f3_happy_1.mp3",
+        "/audio/mumbles/f3_happy_2.mp3"
+      ],
+      "neutral": [
+        "/audio/mumbles/f3_neutral_0.mp3",
+        "/audio/mumbles/f3_neutral_1.mp3",
+        "/audio/mumbles/f3_neutral_2.mp3"
+      ],
+      "grumpy": [
+        "/audio/mumbles/f3_grumpy_0.mp3",
+        "/audio/mumbles/f3_grumpy_1.mp3",
+        "/audio/mumbles/f3_grumpy_2.mp3"
+      ]
+    },
+    "m1": {
+      "happy": [
+        "/audio/mumbles/m1_happy_0.mp3",
+        "/audio/mumbles/m1_happy_1.mp3",
+        "/audio/mumbles/m1_happy_2.mp3"
+      ],
+      "neutral": [
+        "/audio/mumbles/m1_neutral_0.mp3",
+        "/audio/mumbles/m1_neutral_1.mp3",
+        "/audio/mumbles/m1_neutral_2.mp3"
+      ],
+      "grumpy": [
+        "/audio/mumbles/m1_grumpy_0.mp3",
+        "/audio/mumbles/m1_grumpy_1.mp3",
+        "/audio/mumbles/m1_grumpy_2.mp3"
+      ]
+    },
+    "m2": {
+      "happy": [
+        "/audio/mumbles/m2_happy_0.mp3",
+        "/audio/mumbles/m2_happy_1.mp3",
+        "/audio/mumbles/m2_happy_2.mp3"
+      ],
+      "neutral": [
+        "/audio/mumbles/m2_neutral_0.mp3",
+        "/audio/mumbles/m2_neutral_1.mp3",
+        "/audio/mumbles/m2_neutral_2.mp3"
+      ],
+      "grumpy": [
+        "/audio/mumbles/m2_grumpy_0.mp3",
+        "/audio/mumbles/m2_grumpy_1.mp3",
+        "/audio/mumbles/m2_grumpy_2.mp3"
+      ]
+    },
+    "m3": {
+      "happy": [
+        "/audio/mumbles/m3_happy_0.mp3",
+        "/audio/mumbles/m3_happy_1.mp3",
+        "/audio/mumbles/m3_happy_2.mp3"
+      ],
+      "neutral": [
+        "/audio/mumbles/m3_neutral_0.mp3",
+        "/audio/mumbles/m3_neutral_1.mp3",
+        "/audio/mumbles/m3_neutral_2.mp3"
+      ],
+      "grumpy": [
+        "/audio/mumbles/m3_grumpy_0.mp3",
+        "/audio/mumbles/m3_grumpy_1.mp3",
+        "/audio/mumbles/m3_grumpy_2.mp3"
+      ]
+    }
+  }
+}

@@ -9,8 +9,18 @@ import type { Content } from "./types";
 import { calDate, SEASONS } from "./types";
 import { money } from "./text";
 
-export function newSeededRun(content: Content, seed: number): Sim {
-  const sim = Sim.newRun(content, seed);
+export interface StartProfile {
+  boss: string;
+  studio: string;
+  wallpaper?: string;
+}
+
+export function newSeededRun(content: Content, seed: number, profile?: StartProfile): Sim {
+  // the player's identity shapes the world from day zero: studio name flows into
+  // every news story, standings row, and rival needle
+  const c: Content = profile ? { ...content, game: { ...content.game, studioName: profile.studio } } : content;
+  const sim = Sim.newRun(c, seed);
+  if (profile) sim.state.flags.profile = profile;
   const P = content.economy.preseed;
   // Two legacy productions your predecessor started: one lands ~2 weeks after handoff,
   // one is mid-shoot. The warmup autoplay carries them through the real pipeline.
@@ -148,12 +158,13 @@ function welcomeEmail(sim: Sim) {
   });
   const ranked = [...st.studios].sort((a, b) => b.totalRevenue - b.reportedSpend - (a.totalRevenue - a.reportedSpend));
   const rank = ranked.indexOf(sim.player) + 1;
+  const boss = st.flags.profile?.boss;
   sim.pushEmail({
     from: "The Board",
     fromRole: "board",
-    subject: "Welcome to the big chair (it's still warm)",
+    subject: `Welcome to the big chair${boss ? `, ${boss}` : ""} (it's still warm)`,
     body:
-      `Your predecessor ran this studio for ${Math.round(st.day / 7)} weeks. They are pursuing exciting opportunities elsewhere. Do not pursue the same ones.\n\n` +
+      `${boss ? `${boss} — ` : ""}Your predecessor ran this studio for ${Math.round(st.day / 7)} weeks. They are pursuing exciting opportunities elsewhere. Do not pursue the same ones.\n\n` +
       `WHAT YOU'RE INHERITING:\n` +
       `${lines.length ? lines.join("\n") : "• An empty slate. Ominous, honestly."}\n\n` +
       `Producers on staff: ${producers.map((p) => p.name).join(", ") || "none"}.\n` +

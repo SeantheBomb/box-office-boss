@@ -124,14 +124,26 @@ export function Window({
   return (
     <div class="win" style={{ left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z }} onPointerDown={onFocus}>
       <div class="win-title" onPointerDown={(e) => startDrag(e as any, "move")}>
+        <span class="traffic" onPointerDown={(e) => e.stopPropagation()}>
+          <button class="tl tl-close" onClick={onClose} title="close">
+            <i>✕</i>
+          </button>
+          <button class="tl tl-min" onClick={onMinimize} title="minimize">
+            <i>–</i>
+          </button>
+          <button
+            class="tl tl-zoom"
+            title="zoom"
+            onClick={() => onResize(win.w < 900 ? 900 - win.w : 560 - win.w, win.h < 620 ? 620 - win.h : 420 - win.h)}
+          >
+            <i>+</i>
+          </button>
+        </span>
         <span class="win-name">
           {win.title}
           {badge ? <span class="win-badge">{badge}</span> : null}
         </span>
-        <span class="win-btns" onPointerDown={(e) => e.stopPropagation()}>
-          <button onClick={onMinimize} title="minimize">–</button>
-          <button onClick={onClose} title="close">✕</button>
-        </span>
+        <span class="win-title-spacer" />
       </div>
       <div class="win-body">{children}</div>
       <div class="win-resize" onPointerDown={(e) => startDrag(e as any, "resize")} />

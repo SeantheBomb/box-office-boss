@@ -6,6 +6,7 @@ import type { Email } from "../kernel/types";
 import { calDate, DOW } from "../kernel/types";
 import { StandingsChart, FunnelReport } from "./reports";
 import type { OpenDossier } from "./dossiers";
+import { audio } from "./audio";
 
 const ROLE_ICON: Record<string, string> = {
   writer: "✍",
@@ -57,23 +58,31 @@ export function MailApp({ sim, bump, openDossier }: { sim: Sim; bump: () => void
       </div>
       <div class="mail-split">
         <div class="inbox-list">
-          {filtered.map((e) => (
-            <div
-              key={e.id}
-              class={`item ${e.read ? "" : "unread"} ${sel?.id === e.id ? "sel" : ""} ${needsReply(e) ? "needs-reply" : ""}`}
-              onClick={() => {
-                e.read = true;
-                setSelId(e.id);
-                bump();
-              }}
-            >
-              <div class="from">
-                {ROLE_ICON[e.fromRole] ?? "✉"} {e.from}
-                {needsReply(e) && <span class="reply-chip">REPLY</span>}
+          {filtered.map((e) => {
+            const d = calDate(e.day);
+            const age = sim.state.day - e.day;
+            const when = age === 0 ? "today" : age === 1 ? "yesterday" : `${DOW[d.dayOfWeek]} wk${d.week}`;
+            return (
+              <div
+                key={e.id}
+                class={`item ${e.read ? "" : "unread"} ${sel?.id === e.id ? "sel" : ""} ${needsReply(e) ? "needs-reply" : ""}`}
+                onClick={() => {
+                  audio.sfx("click", 0.35);
+                  e.read = true;
+                  setSelId(e.id);
+                  bump();
+                }}
+              >
+                <div class="from">
+                  {!e.read && <span class="unread-dot" />}
+                  {ROLE_ICON[e.fromRole] ?? "✉"} <b>{e.from}</b>
+                  <span class="mail-when">{when}</span>
+                </div>
+                <div class="mail-subj">{e.subject}{needsReply(e) && <span class="reply-chip">REPLY</span>}</div>
+                <div class="mail-preview">{e.body.replace(/\n/g, " ").slice(0, 64)}…</div>
               </div>
-              {e.subject}
-            </div>
-          ))}
+            );
+          })}
           {!filtered.length && <div style={{ padding: 12, color: "#5a636e" }}>Nothing here. Enjoy it while it lasts.</div>}
         </div>
         {sel ? <ReadPane sim={sim} email={sel} bump={bump} openDossier={openDossier} /> : <div class="inbox-empty">Select a message</div>}
@@ -122,6 +131,7 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
             <button
               key={a.id}
               onClick={() => {
+                audio.sfx("stamp", 0.8);
                 sim.emailAction(email.id, a.id);
                 bump();
               }}

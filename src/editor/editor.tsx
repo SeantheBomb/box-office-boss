@@ -11,7 +11,7 @@ import { makeRng } from "../kernel/rng";
 import { mintWorld } from "../kernel/people";
 import { mintPitch } from "../kernel/pitchgen";
 import { money } from "../kernel/text";
-import { Portrait } from "../surface/portraits";
+import { Portrait2 } from "../surface/portraits2";
 import { DAYS_PER_YEAR } from "../kernel/types";
 
 type Tab = ContentFile | "preview" | "simlab" | "publish";
@@ -124,7 +124,7 @@ function PreviewTab({ draft }: { draft: any }) {
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {world.people.slice(0, 24).map((p) => (
           <div class="preview-card" key={p.id} style={{ width: 300 }}>
-            <Portrait seed={p.portraitSeed} size={54} />
+            <Portrait2 person={p} size={64} />
             <div>
               <b>{p.name}</b> <span style={{ opacity: 0.6 }}>({p.role}, {p.archetype})</span>
               <div style={{ fontSize: 11, opacity: 0.8 }}>

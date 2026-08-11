@@ -1,11 +1,11 @@
-// BossOS: the office monitor is now the whole game surface. Windows over a desk backdrop,
-// taskbar, persistent chrome. Meetings interrupt full-screen; everything else is a window.
+// BossOS: knockoff-Mac shell. Menu bar up top, dock down bottom, windows in between,
+// toasts drifting in from the corner. Meetings interrupt full-screen; dossiers float above.
 
 import { useEffect, useRef, useState } from "preact/hooks";
 import { Sim } from "../kernel/sim";
 import { newSeededRun } from "../kernel/preseed";
 import type { Content, SimEvent } from "../kernel/types";
-import { fmtDate } from "../kernel/types";
+import { calDate, DOW } from "../kernel/types";
 import { money } from "../kernel/text";
 import { saveLocal, loadLocal, clearLocal, exportSave, importSave } from "../kernel/save";
 import { MeetingScene } from "./meeting";
@@ -16,12 +16,14 @@ import { MailApp } from "./mail";
 import { CalendarApp } from "./calendar";
 import { StandingsChart, ProductionBoard, AudienceReport, WeekChart, MandateBoard } from "./reports";
 import { MovieDossier, PersonDossier } from "./dossiers";
+import { audio } from "./audio";
+import { MenuBar, Dock, ToastStack, Onboarding, type Profile, type Toast } from "./macos";
 
 const APPS: { app: string; title: string; icon: string; w?: number; h?: number }[] = [
-  { app: "mail", title: "✉ BossMail", icon: "✉", w: 620, h: 460 },
-  { app: "calendar", title: "🗓 Calendar", icon: "🗓", w: 640, h: 340 },
-  { app: "board", title: "🎬 Production Board", icon: "🎬", w: 660, h: 420 },
-  { app: "standings", title: "📈 Standings", icon: "📈", w: 640, h: 460 },
+  { app: "mail", title: "✉ BossMail", icon: "✉", w: 640, h: 470 },
+  { app: "calendar", title: "🗓 Calendar", icon: "🗓", w: 660, h: 360 },
+  { app: "board", title: "🎬 Production Board", icon: "🎬", w: 680, h: 430 },
+  { app: "standings", title: "📈 Standings", icon: "📈", w: 660, h: 480 },
   { app: "audience", title: "👥 Audience", icon: "👥", w: 620, h: 420 },
 ];
 
@@ -35,12 +37,13 @@ function detectStaleSave(): boolean {
   }
 }
 
+const newSeed = () => (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0;
+
 export function App({ content }: { content: Content }) {
-  // breaking-change gate: an old save exists — tell the player before we touch anything
   const [staleSave, setStaleSave] = useState(detectStaleSave);
-  const [showChangelog, setShowChangelog] = useState(() => localStorage.getItem("bob.lastSeenVersion") !== BUILD_VERSION && !detectStaleSave());
-  const [sim, setSim] = useState<Sim>(() =>
-    detectStaleSave() ? newSeededRun(content, 1) /* placeholder until the player confirms the reset */ : loadLocal(content) ?? newSeededRun(content, (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0)
+  const [sim, setSim] = useState<Sim | undefined>(() => (detectStaleSave() ? undefined : loadLocal(content)));
+  const [showChangelog, setShowChangelog] = useState(
+    () => !!localStorage.getItem("bob.save") && localStorage.getItem("bob.lastSeenVersion") !== BUILD_VERSION && !detectStaleSave()
   );
   const [, setTick] = useState(0);
   const bump = () => setTick((t) => t + 1);
@@ -48,34 +51,101 @@ export function App({ content }: { content: Content }) {
   const [meetingQueue, setMeetingQueue] = useState<SimEvent[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [toast, setToast] = useState<string | undefined>();
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [bouncing, setBouncing] = useState<Set<string>>(new Set());
   const wm = useWindows();
   const speedRef = useRef(speed);
-  speedRef.current = editorOpen || drawerOpen || staleSave || showChangelog || meetingQueue.length > 0 || sim.state.gameOver ? 0 : speed;
   const simRef = useRef(sim);
   simRef.current = sim;
+  speedRef.current = editorOpen || drawerOpen || staleSave || showChangelog || meetingQueue.length > 0 || !sim || sim.state.gameOver ? 0 : speed;
+  const toastId = useRef(1);
+  const notifyRef = useRef({ inboxLen: -1, day: -1 });
+
+  const profile: Profile = sim?.state.flags.profile ?? { boss: "Boss", studio: sim?.state.studios[0]?.name ?? "Boss Films", wallpaper: "dusk" };
+
+  (window as any).BOB_VERSION = BUILD_VERSION;
+
+  const pushToast = (icon: string, title: string, body: string, onClick?: () => void) => {
+    const id = toastId.current++;
+    setToasts((ts) => [...ts.slice(-3), { id, icon, title, body, onClick }]);
+    setTimeout(() => setToasts((ts) => ts.filter((t) => t.id !== id)), 9000);
+  };
+
+  const bounceDock = (app: string) => {
+    setBouncing((b) => new Set(b).add(app));
+    setTimeout(() => setBouncing((b) => { const n = new Set(b); n.delete(app); return n; }), 2400);
+  };
 
   const openDossier = (kind: "movie" | "person", id: string) => {
-    const title = kind === "movie" ? `📁 ${simRef.current.movie(id)?.title ?? "?"}` : `👤 ${simRef.current.person(id)?.name ?? "?"}`;
-    wm.open(kind === "movie" ? "movieDossier" : "personDossier", title, { id: `${kind}:${id}`, props: { id }, w: 460, h: 480 });
+    const title = kind === "movie" ? `📁 ${simRef.current?.movie(id)?.title ?? "?"}` : `👤 ${simRef.current?.person(id)?.name ?? "?"}`;
+    audio.sfx("window_open", 0.7);
+    wm.open(kind === "movie" ? "movieDossier" : "personDossier", title, { id: `${kind}:${id}`, props: { id }, w: 470, h: 500 });
   };
 
   const collectMeetings = (meetings: SimEvent[]) => {
     if (meetings.length) setMeetingQueue((q) => [...q, ...meetings]);
   };
 
+  /** New mail toasts + calendar reminders. Runs after any sim time movement. */
+  const checkNotifications = () => {
+    const s = simRef.current;
+    if (!s) return;
+    const ref = notifyRef.current;
+    if (ref.inboxLen === -1) {
+      ref.inboxLen = s.state.inbox.length;
+      ref.day = s.state.day;
+      return;
+    }
+    if (s.state.inbox.length > ref.inboxLen) {
+      const fresh = s.state.inbox.slice(0, s.state.inbox.length - ref.inboxLen);
+      for (const em of fresh.slice(0, 3)) {
+        pushToast("✉", em.from, em.subject, () => wm.open("mail", "✉ BossMail", { w: 640, h: 470 }));
+      }
+      audio.sfx("email");
+      bounceDock("mail");
+    }
+    ref.inboxLen = s.state.inbox.length;
+    if (s.state.day !== ref.day) {
+      ref.day = s.state.day;
+      const openCal = () => wm.open("calendar", "🗓 Calendar", { w: 660, h: 360 });
+      const label = (e: SimEvent) => {
+        const m = s.movie(e.data.movieId);
+        const p = s.person(e.data.personId ?? e.data.castId ?? e.data.writerId);
+        return `${e.type.replace(/([A-Z])/g, " $1").toLowerCase()}${m ? ` — ${m.title}` : p ? ` — ${p.name}` : ""}`;
+      };
+      const today = s.state.events.filter((e) => e.kind === "meeting" && e.day === s.state.day);
+      const tomorrow = s.state.events.filter((e) => e.kind === "meeting" && e.day === s.state.day + 1);
+      if (today.length) {
+        pushToast("🗓", "Today", today.map(label).join(" · "), openCal);
+        audio.sfx("reminder");
+        bounceDock("calendar");
+      }
+      if (tomorrow.length) {
+        pushToast("🗓", "Tomorrow", tomorrow.map(label).join(" · "), openCal);
+        if (!today.length) audio.sfx("reminder", 0.6);
+      }
+    }
+  };
+
+  // reset notification watermarks whenever a different run takes over
+  useEffect(() => {
+    notifyRef.current = { inboxLen: -1, day: -1 };
+    checkNotifications();
+  }, [sim]);
+
   const skipToNextEvent = () => {
     const s = simRef.current;
+    if (!s || meetingQueue.length > 0) return;
     const logLen = s.state.eventLog.length;
     const inboxLen = s.state.inbox.length;
     const collected: SimEvent[] = [];
     for (let i = 0; i < 60 && !s.state.gameOver; i++) {
       collected.push(...s.advanceDay());
-      // any event resolving counts — outcomes included, not just meetings
       if (collected.length || s.state.eventLog.length !== logLen || s.state.inbox.length !== inboxLen) break;
     }
     collectMeetings(collected);
     saveLocal(s);
+    checkNotifications();
     bump();
   };
 
@@ -84,11 +154,21 @@ export function App({ content }: { content: Content }) {
       sim: () => simRef.current,
       skipDays: (n: number) => {
         const s = simRef.current;
+        if (!s) return;
         const collected: SimEvent[] = [];
         for (let i = 0; i < n && !s.state.gameOver; i++) collected.push(...s.advanceDay());
         collectMeetings(collected);
+        checkNotifications();
         setTick((t) => t + 1);
       },
+    };
+    // audio unlock on the first real interaction
+    const unlock = () => audio.unlock();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
     };
   }, []);
 
@@ -99,16 +179,23 @@ export function App({ content }: { content: Content }) {
       const dt = (now - last) / 1000;
       last = now;
       const s = simRef.current;
-      if (speedRef.current === 0 || s.state.gameOver) return;
+      if (!s || speedRef.current === 0 || s.state.gameOver) return;
       s.state.timeOfDay += (dt / s.content.game.secondsPerDay) * speedRef.current;
       if (s.state.timeOfDay >= 1) {
         collectMeetings(s.advanceDay());
         if (s.state.day % s.content.game.autosaveEveryDays === 0 || s.state.gameOver) saveLocal(s);
+        checkNotifications();
       }
       setTick((t) => t + 1);
     }, 100);
     return () => clearInterval(iv);
   }, []);
+
+  // ambience + music follow the scene
+  const meetingScene = meetingQueue.length > 0 ? (sim?.content.meetings[meetingQueue[0].type]?.scene ?? "meetingRoom") : "office";
+  useEffect(() => {
+    audio.setScene(meetingScene === "office" ? "office" : meetingScene);
+  }, [meetingScene]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -116,7 +203,7 @@ export function App({ content }: { content: Content }) {
         e.preventDefault();
         setEditorOpen((v) => !v);
       }
-      if (e.code === "Space" && !editorOpen && !drawerOpen) {
+      if (e.code === "Space" && !editorOpen && !drawerOpen && meetingQueue.length === 0) {
         const target = e.target as HTMLElement;
         if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
           e.preventDefault();
@@ -126,17 +213,46 @@ export function App({ content }: { content: Content }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [editorOpen, drawerOpen]);
+  }, [editorOpen, drawerOpen, meetingQueue.length]);
 
-  const newRun = () => {
+  const startRun = (p: Profile) => {
     clearLocal();
-    const s = newSeededRun(content, (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
+    const s = newSeededRun(content, newSeed(), p);
     setSim(s);
     setMeetingQueue([]);
     setDrawerOpen(false);
     saveLocal(s);
+    localStorage.setItem("bob.lastSeenVersion", BUILD_VERSION);
     bump();
   };
+
+  // ---------- gates: breaking save → onboarding → game ----------
+  if (staleSave) {
+    return (
+      <div class="game wp-dusk">
+        <div class="modal-veil">
+          <div class="update-modal">
+            <h3>🎬 Studio Renovation — v{BUILD_VERSION}</h3>
+            <p>A major update rebuilt the studio from the foundation up. Your old save predates the new systems and <b>can't be carried forward</b>.</p>
+            <ul>{CHANGELOG.map((c, i) => <li key={i}>{c}</li>)}</ul>
+            <p><b>To play the new version, your save needs to be reset.</b></p>
+            <button
+              class="update-confirm"
+              onClick={() => {
+                clearLocal();
+                setStaleSave(false);
+                setSim(undefined); // falls through to onboarding
+              }}
+            >
+              Reset save & set up the new studio ▸
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!sim) return <Onboarding onDone={startRun} />;
 
   const st = sim.state;
   const unread = st.inbox.filter((e) => !e.read).length;
@@ -146,7 +262,7 @@ export function App({ content }: { content: Content }) {
   if (st.gameOver) {
     const go = st.gameOver;
     return (
-      <div class="game">
+      <div class={`game wp-${profile.wallpaper}`}>
         <div class="gameover">
           <h1>{go.kind === "bankrupt" ? "THE MONEY RAN OUT" : "THE BOARD HAS DECIDED"}</h1>
           <p style={{ maxWidth: 520, lineHeight: 1.6 }}>
@@ -155,11 +271,11 @@ export function App({ content }: { content: Content }) {
               : "Security is very polite. They let you keep the stapler. The trades will call it a 'transition'."}
           </p>
           <p>
-            You lasted <b>{Math.floor(go.day / 336) + 1}</b> year(s). Movies released:{" "}
+            {profile.boss}, you ran {profile.studio} for <b>{Math.floor(go.day / 336) + 1}</b> year(s). Movies released:{" "}
             <b>{st.movies.filter((m) => m.studio === 0 && m.releaseDay !== undefined).length}</b>. Final profit:{" "}
             <b>{money(sim.player.totalRevenue - sim.player.totalSpent)}</b>.
           </p>
-          <button onClick={newRun}>Start a New Studio</button>
+          <button onClick={() => setSim(undefined)}>Start a New Studio</button>
         </div>
       </div>
     );
@@ -184,7 +300,7 @@ export function App({ content }: { content: Content }) {
             <h3>This Week at the Box Office</h3>
             <WeekChart sim={sim} openDossier={openDossier} />
             <h3 style={{ marginTop: 14 }}>Standings — released-picture profit</h3>
-            <StandingsChart sim={sim} />
+            <StandingsChart sim={sim} openDossier={openDossier} />
           </div>
         );
       case "audience":
@@ -209,10 +325,30 @@ export function App({ content }: { content: Content }) {
     return null;
   };
 
+  const openApp = (app: string) => {
+    const a = APPS.find((x) => x.app === app);
+    if (!a) return;
+    audio.sfx("window_open", 0.7);
+    wm.open(a.app, a.title, { w: a.w, h: a.h });
+  };
+
   return (
-    <div class="game">
+    <div class={`game mac wp-${profile.wallpaper}`}>
+      <MenuBar
+        sim={sim}
+        profile={profile}
+        speed={speed}
+        setSpeed={(n) => { audio.sfx("click", 0.4); setSpeed(n); }}
+        onSkip={skipToNextEvent}
+        inMeeting={meetingQueue.length > 0}
+        unread={unread}
+        actionable={actionable}
+        onOpenApp={openApp}
+        onDrawer={() => setDrawerOpen(true)}
+        apps={APPS}
+      />
+      <div class="day-progress"><div style={{ width: `${Math.min(100, st.timeOfDay * 100)}%` }} /></div>
       <div class="scene">
-        {toast && <div class="toast">{toast}</div>}
         {meetingQueue.length > 0 ? (
           <MeetingScene
             key={meetingQueue[0].id}
@@ -220,55 +356,28 @@ export function App({ content }: { content: Content }) {
             event={meetingQueue[0]}
             openDossier={openDossier}
             onDone={() => {
+              audio.sfx("window_close", 0.6);
               setMeetingQueue((q) => q.slice(1));
               saveLocal(sim);
+              checkNotifications();
               bump();
             }}
           />
         ) : (
           <div class="desktop">
-            <div class={`desk-backdrop ${st.timeOfDay > 0.66 ? "evening" : ""}`}>
-              <div class="window-view" />
-              <div class={`logo ${tier >= 3 ? "doomed" : tier >= 2 ? "stressed" : ""}`}>{sim.content.game.studioName}</div>
-            </div>
-            <div class="taskbar">
-              <span class="taskbar-brand">BossOS</span>
-              {APPS.map((a) => {
-                const win = wm.wins.find((w) => w.app === a.app);
-                return (
-                  <button
-                    key={a.app}
-                    class={win && !win.min ? "open" : ""}
-                    onClick={() => wm.open(a.app, a.title, { w: a.w, h: a.h })}
-                    title={a.title}
-                  >
-                    {a.icon}
-                    {a.app === "mail" && actionable > 0 && <span class="task-badge">{actionable}</span>}
-                    {a.app === "mail" && !actionable && unread > 0 && <span class="task-badge dim">{unread}</span>}
-                  </button>
-                );
-              })}
-              <span style={{ flex: 1 }} />
-              {wm.wins.filter((w) => w.min).map((w) => (
-                <button key={w.id} class="minned" onClick={() => wm.focus(w.id)}>
-                  {w.title.slice(0, 18)}
-                </button>
-              ))}
-              <button onClick={() => setDrawerOpen(true)} title="Desk drawer">🗄</button>
-            </div>
+            <div class={`desk-tint ${st.timeOfDay > 0.66 ? "evening" : ""} ${tier >= 2 ? "stressed" : ""}`} />
+            <div class="wp-credit">{profile.studio}</div>
           </div>
         )}
-        {/* dossier (and any other) windows float above EITHER the desktop or an active meeting —
-            opening one from inside a meeting no longer strands it behind the scene */}
         {wm.wins
           .filter((w) => meetingQueue.length === 0 || w.app === "movieDossier" || w.app === "personDossier")
           .map((w) => (
             <Window
               key={w.id}
               win={w}
-              onClose={() => wm.close(w.id)}
+              onClose={() => { audio.sfx("window_close", 0.6); wm.close(w.id); }}
               onFocus={() => wm.focus(w.id)}
-              onMinimize={() => wm.minimize(w.id)}
+              onMinimize={() => { audio.sfx("window_close", 0.4); wm.minimize(w.id); }}
               onMove={(dx, dy) => wm.move(w.id, dx, dy)}
               onResize={(dw, dh) => wm.resize(w.id, dw, dh)}
               badge={w.app === "mail" && actionable ? String(actionable) : undefined}
@@ -276,33 +385,20 @@ export function App({ content }: { content: Content }) {
               {renderApp(w.app, w.props)}
             </Window>
           ))}
-        {staleSave && (
-          <div class="modal-veil">
-            <div class="update-modal">
-              <h3>🎬 Studio Renovation — v{BUILD_VERSION}</h3>
-              <p>
-                A major update shipped, and it rebuilt the studio from the foundation up. Your old save predates the new systems
-                (producers, packaging, the works) and <b>can't be carried forward</b>.
-              </p>
-              <ul>{CHANGELOG.map((c, i) => <li key={i}>{c}</li>)}</ul>
-              <p><b>To play the new version, your save needs to be reset.</b> A fresh studio (with a preseeded, mid-flight slate) starts immediately.</p>
-              <button
-                class="update-confirm"
-                onClick={() => {
-                  clearLocal();
-                  const s = newSeededRun(content, (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
-                  setSim(s);
-                  saveLocal(s);
-                  localStorage.setItem("bob.lastSeenVersion", BUILD_VERSION);
-                  setStaleSave(false);
-                }}
-              >
-                Reset save & take the chair ▸
-              </button>
-            </div>
-          </div>
+        {meetingQueue.length === 0 && (
+          <Dock
+            apps={APPS}
+            openApps={new Set(wm.wins.filter((w) => !w.min).map((w) => w.app))}
+            bouncing={bouncing}
+            minned={wm.wins.filter((w) => w.min).map((w) => ({ id: w.id, title: w.title }))}
+            onOpen={openApp}
+            onFocusMin={(id) => { audio.sfx("window_open", 0.5); wm.focus(id); }}
+            onDrawer={() => setDrawerOpen(true)}
+            mailBadge={actionable}
+          />
         )}
-        {showChangelog && !staleSave && (
+        <ToastStack toasts={toasts} dismiss={(id) => setToasts((ts) => ts.filter((t) => t.id !== id))} />
+        {showChangelog && (
           <div class="modal-veil" onClick={() => { localStorage.setItem("bob.lastSeenVersion", BUILD_VERSION); setShowChangelog(false); }}>
             <div class="update-modal" onClick={(e) => e.stopPropagation()}>
               <h3>📋 Studio Memo — v{BUILD_VERSION}</h3>
@@ -319,7 +415,11 @@ export function App({ content }: { content: Content }) {
             sim={sim}
             onClose={() => setDrawerOpen(false)}
             onNew={() => {
-              if (confirm("Abandon this studio and start fresh?")) newRun();
+              if (confirm("Abandon this studio and start fresh?")) {
+                clearLocal();
+                setSim(undefined);
+                setDrawerOpen(false);
+              }
             }}
             onImport={(json) => {
               try {
@@ -327,8 +427,6 @@ export function App({ content }: { content: Content }) {
                 setSim(s);
                 saveLocal(s);
                 setDrawerOpen(false);
-                setToast("Save imported.");
-                setTimeout(() => setToast(undefined), 2500);
               } catch (err) {
                 alert(`Import failed: ${err}`);
               }
@@ -337,27 +435,6 @@ export function App({ content }: { content: Content }) {
         )}
         {editorOpen && <Editor onClose={() => setEditorOpen(false)} />}
       </div>
-      <div class="chrome">
-        <span class="date">{fmtDate(st.day)}</span>
-        <div class="daybar"><div style={{ width: `${Math.min(100, st.timeOfDay * 100)}%` }} /></div>
-        {meetingQueue.length > 0 ? (
-          <span class="forced-pause" title="Time is paused: someone is in the room with you. Finish the meeting to get the clock back.">
-            ⏸ in a meeting
-          </span>
-        ) : (
-          <>
-            <button class={speed === 0 ? "on" : ""} onClick={() => setSpeed(0)}>⏸</button>
-            <button class={speed === 1 ? "on" : ""} onClick={() => setSpeed(1)}>1×</button>
-            <button class={speed === 2 ? "on" : ""} onClick={() => setSpeed(2)}>2×</button>
-            <button class={speed === 4 ? "on" : ""} onClick={() => setSpeed(4)}>4×</button>
-            <button onClick={skipToNextEvent} title="Jump ahead to the next calendar event or email">⏭ next event</button>
-          </>
-        )}
-        <span style={{ fontSize: 12, opacity: 0.8 }}>
-          ✉ {unread} unread{actionable ? ` · ${actionable} need replies` : ""}
-        </span>
-        <span class={`cash ${sim.player.cash < 5_000_000 ? "low" : ""}`}>💰 {money(sim.player.cash)}</span>
-      </div>
     </div>
   );
 }
@@ -365,11 +442,11 @@ export function App({ content }: { content: Content }) {
 function DrawerModal({ sim, onClose, onNew, onImport }: { sim: Sim; onClose: () => void; onNew: () => void; onImport: (json: string) => void }) {
   const fileRef = useRef<HTMLInputElement>(null);
   return (
-    <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={onClose}>
-      <div style={{ background: "#f4eee2", color: "#1c1a17", padding: 24, minWidth: 340, boxShadow: "0 20px 60px #000" }} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ fontVariant: "small-caps", letterSpacing: 2, marginBottom: 12 }}>Desk Drawer</h3>
+    <div class="modal-veil" style={{ zIndex: 400 }} onClick={onClose}>
+      <div class="drawer-modal" onClick={(e) => e.stopPropagation()}>
+        <h3>Desk Drawer</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <button onClick={() => { saveLocal(sim); onClose(); }}>💾 Save now</button>
+          <button onClick={() => { saveLocal(sim); audio.sfx("stamp", 0.7); onClose(); }}>💾 Save now</button>
           <button
             onClick={() => {
               const blob = new Blob([exportSave(sim)], { type: "application/json" });
@@ -392,11 +469,11 @@ function DrawerModal({ sim, onClose, onNew, onImport }: { sim: Sim; onClose: () 
               if (f) onImport(await f.text());
             }}
           />
-          <button onClick={onNew}>🎬 New studio (new seed)</button>
+          <button onClick={onNew}>🎬 New studio (new name, new seed)</button>
           <button onClick={onClose}>Close</button>
         </div>
         <p style={{ marginTop: 12, fontSize: 11, color: "#666" }}>
-          Seed {sim.state.seed} · Day {sim.state.day} · autosaves weekly · Ctrl+Shift+E for the editor
+          Seed {sim.state.seed} · Day {sim.state.day} · v{BUILD_VERSION} · autosaves weekly · Ctrl+Shift+E for the editor
         </p>
       </div>
     </div>
