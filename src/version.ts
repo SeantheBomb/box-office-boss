@@ -1,9 +1,10 @@
 // Bump BUILD_VERSION every deploy; players get a studio-memo popup with the changelog.
 // SAVE_VERSION lives in kernel/save.ts — when it bumps, the popup explains the save reset.
 
-export const BUILD_VERSION = "0.3.0";
+export const BUILD_VERSION = "0.3.1";
 
 export const CHANGELOG: string[] = [
+  "FIX: dossiers opened from inside a meeting (the \"full dossier ▸\" / movie links) now actually appear as a floating window on top of the meeting, instead of hiding behind it until the meeting ended.",
   "THE TOWN PLAYS BACK: rivals start mid-flight — releases every week or two, announced release dates, and they'll blink if you crowd their weekend.",
   "PACKAGING SESSIONS: you now assemble each picture — pick the director and leads from real candidates. Agents call. Agents always call.",
   "PREMIERE NIGHT: your releases end with a red carpet, a crowd, and a toast.",

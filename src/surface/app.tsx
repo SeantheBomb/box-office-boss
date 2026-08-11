@@ -218,10 +218,7 @@ export function App({ content }: { content: Content }) {
             key={meetingQueue[0].id}
             sim={sim}
             event={meetingQueue[0]}
-            openDossier={(kind, id) => {
-              /* dossiers open behind the meeting; visible after */
-              openDossier(kind, id);
-            }}
+            openDossier={openDossier}
             onDone={() => {
               setMeetingQueue((q) => q.slice(1));
               saveLocal(sim);
@@ -234,20 +231,6 @@ export function App({ content }: { content: Content }) {
               <div class="window-view" />
               <div class={`logo ${tier >= 3 ? "doomed" : tier >= 2 ? "stressed" : ""}`}>{sim.content.game.studioName}</div>
             </div>
-            {wm.wins.map((w) => (
-              <Window
-                key={w.id}
-                win={w}
-                onClose={() => wm.close(w.id)}
-                onFocus={() => wm.focus(w.id)}
-                onMinimize={() => wm.minimize(w.id)}
-                onMove={(dx, dy) => wm.move(w.id, dx, dy)}
-                onResize={(dw, dh) => wm.resize(w.id, dw, dh)}
-                badge={w.app === "mail" && actionable ? String(actionable) : undefined}
-              >
-                {renderApp(w.app, w.props)}
-              </Window>
-            ))}
             <div class="taskbar">
               <span class="taskbar-brand">BossOS</span>
               {APPS.map((a) => {
@@ -275,6 +258,24 @@ export function App({ content }: { content: Content }) {
             </div>
           </div>
         )}
+        {/* dossier (and any other) windows float above EITHER the desktop or an active meeting —
+            opening one from inside a meeting no longer strands it behind the scene */}
+        {wm.wins
+          .filter((w) => meetingQueue.length === 0 || w.app === "movieDossier" || w.app === "personDossier")
+          .map((w) => (
+            <Window
+              key={w.id}
+              win={w}
+              onClose={() => wm.close(w.id)}
+              onFocus={() => wm.focus(w.id)}
+              onMinimize={() => wm.minimize(w.id)}
+              onMove={(dx, dy) => wm.move(w.id, dx, dy)}
+              onResize={(dw, dh) => wm.resize(w.id, dw, dh)}
+              badge={w.app === "mail" && actionable ? String(actionable) : undefined}
+            >
+              {renderApp(w.app, w.props)}
+            </Window>
+          ))}
         {staleSave && (
           <div class="modal-veil">
             <div class="update-modal">
