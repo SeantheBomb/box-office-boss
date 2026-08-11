@@ -47,6 +47,11 @@
       { "id": "blame", "line": "That one's on me. It won't happen twice." },
       { "id": "blameDirector", "line": "The director went forty shots over. Direct your questions there." }
     ],
+    "victories": [
+      { "id": "credit", "line": "The team delivered. I just kept the lights on and the egos apart." },
+      { "id": "gloat", "line": "Read the number again. Slowly. I'll wait." },
+      { "id": "askMore", "line": "Imagine what that number looks like if you loosen the purse strings." }
+    ],
     "reactions": {
       "satisfied": ["Nods around the table. One member takes a second pastry: the highest honor.", "'Continue.' From this board, that's a parade."],
       "neutral": ["Pens click. Notes are made. The notes are about you.", "'Noted.' The word hangs there like weather."],
@@ -111,6 +116,37 @@
       "neutral": ["'Hm.' The exec pockets a desk mint on the way out.", "'The board reads the trades, you know.' They know."],
       "bad": ["'I'll soften it for the board. This week.'", "The door closes at a volume with a message in it."]
     }
+  },
+  "packaging": {
+    "scene": "office",
+    "title": "Packaging Session"
+  },
+  "premiere": {
+    "scene": "dinner",
+    "title": "Premiere Night",
+    "carpetLines": [
+      { "id": "humble", "line": "\"It's the team's night. I just signed the checks.\"" },
+      { "id": "bold", "line": "\"This is the best picture this studio has ever made. Print it.\"" },
+      { "id": "cryptic", "line": "\"Ask me again after the third act.\"" }
+    ],
+    "toasts": [
+      { "id": "star", "line": "Toast the star — tonight their name is above yours." },
+      { "id": "director", "line": "Toast the director — they bled for every frame." },
+      { "id": "room", "line": "Toast the room — nobody remembers who paid. Remind no one." }
+    ]
+  },
+  "lunch": {
+    "scene": "dinner",
+    "title": "Lunch",
+    "plays": [
+      { "id": "flatter", "line": "Order for them. Compliment the last thing they did. Mean at least half of it." },
+      { "id": "business", "line": "Skip the small talk — what would it take to get you on a picture this year?" },
+      { "id": "gossip", "line": "Lean in: \"So. Tell me everything you know that I don't.\"" }
+    ]
+  },
+  "festival": {
+    "scene": "conStage",
+    "title": "Sundown Festival"
   },
   "producersStandup": {
     "scene": "office",

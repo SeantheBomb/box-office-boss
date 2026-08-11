@@ -16,6 +16,9 @@ export function newSeededRun(content: Content, seed: number): Sim {
   // one is mid-shoot. The warmup autoplay carries them through the real pipeline.
   seedLegacyMovie(sim, "post", P.warmupDays - 8);
   seedLegacyMovie(sim, "production", Math.round(P.warmupDays * 0.75));
+  // rivals were never cold: each starts with a released picture on the books and two in flight,
+  // so the town has a release every week or two from day one
+  for (let si = 1; si < sim.state.studios.length; si++) seedRivalLegacies(sim, si);
   autoplay(sim, {
     days: P.warmupDays,
     emailPolicy: disciplinedEmailPolicy(3),
@@ -68,6 +71,67 @@ function seedLegacyMovie(sim: Sim, phase: "post" | "production", milestoneDay: n
   } else {
     m.phase = "production";
     sim.addEvent(milestoneDay, "afternoon", "outcome", "productionWrap", { movieId: m.id });
+  }
+}
+
+function seedRivalLegacies(sim: Sim, si: number) {
+  const st = sim.state;
+  const rng = sim.rng.get("world");
+  const s = st.studios[si];
+  const mk = () => {
+    const writer = rng.pick(st.people.filter((p) => p.role === "writer"));
+    const pitch = mintPitch(rng, sim.content, st, writer, si);
+    const m = sim.createMovie(si, writer, pitch);
+    m.budget = Math.round(pitch.minBudget * (0.9 + rng.next() * 0.3));
+    const q = 40 + rng.int(0, 40);
+    m.quality = { script: q, direction: q + rng.int(-8, 8), performance: q + rng.int(-8, 8), vfx: q, polish: q };
+    m.actualVfx = m.estVfx;
+    m.hype = 30 + rng.int(0, 35);
+    const freeCast = st.people.filter((p) => p.role === "cast" && p.busyUntil <= 0);
+    m.castIds = rng.shuffle([...freeCast]).slice(0, 2).map((c) => c.id);
+    const freeDir = st.people.find((p) => p.role === "director" && p.busyUntil <= 0);
+    if (freeDir) m.directorId = freeDir.id;
+    return m;
+  };
+  // (a) one already on the books: released pre-history, revenue banked
+  const hist = mk();
+  hist.phase = "done";
+  hist.releaseDay = 1;
+  const r = hist.budget * (0.8 + rng.next() * 1.6);
+  hist.revenue = r;
+  hist.weeklyGross = [r * 0.4];
+  s.totalRevenue += r;
+  s.cash += r - hist.budget;
+  s.totalSpent += hist.budget;
+  s.reportedSpend += hist.budget + 3_000_000;
+  // (b) one in post, release already dated inside the warmup window
+  const post = mk();
+  post.phase = "post";
+  post.spent = post.budget * 0.7;
+  s.totalSpent += post.spent;
+  s.cash -= post.spent;
+  post.dailyCost = 20000;
+  const relDay = 5 + rng.int(0, 28);
+  const relEv = sim.addEvent(relDay, "morning", "outcome", "release", { movieId: post.id, marketingTier: "standard" });
+  post.announcedRelease = relEv.day;
+  for (const cid of [...post.castIds, post.directorId].filter(Boolean) as string[]) {
+    const p = sim.person(cid)!;
+    p.busyUntil = relDay;
+    p.signedByStudio = si;
+  }
+  // (c) one mid-production, wrapping soon after
+  const prod = mk();
+  prod.phase = "production";
+  prod.spent = prod.budget * 0.3;
+  s.totalSpent += prod.spent;
+  s.cash -= prod.spent;
+  prod.dailyCost = Math.round((prod.budget * sim.content.economy.production.baseDailyCostFactor) / 1000) * 1000;
+  prod.phaseEnd = 15 + rng.int(0, 35);
+  sim.addEvent(prod.phaseEnd, "afternoon", "outcome", "rivalWrap", { movieId: prod.id });
+  for (const cid of [...prod.castIds, prod.directorId].filter(Boolean) as string[]) {
+    const p = sim.person(cid)!;
+    p.busyUntil = prod.phaseEnd + 60;
+    p.signedByStudio = si;
   }
 }
 

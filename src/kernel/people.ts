@@ -80,6 +80,9 @@ export function mintPerson(rng: Rng, content: Content, role: Role): Person {
     base.avgProdCost = range(rng, a.cost);
     base.avgProdRevenue = range(rng, a.revenue);
     base.avgRating = irange(rng, a.rating);
+  } else if (role === "agent") {
+    base.archetype = rng.pick(P.agentArchetypes as string[]);
+    base.avgRating = irange(rng, [40, 90]); // dealmaking bite
   } else if (role === "critic") {
     base.archetype = rng.pick(P.criticPersonas as string[]);
     base.outlet = rng.pick(P.nameBanks.outlets as string[]);
@@ -112,8 +115,14 @@ export function mintWorld(rng: Rng, content: Content): { people: Person[]; vfxSt
     ["writer", c.writers],
     ["producer", c.producers],
     ["critic", c.critics],
+    ["agent", c.agents ?? 6],
   ];
   for (const [role, n] of roles) for (let i = 0; i < n; i++) people.push(mintPerson(rng, content, role));
+  // everybody who matters is repped
+  const agents = people.filter((p) => p.role === "agent");
+  for (const p of people) {
+    if (p.role === "cast" || p.role === "director") p.agentId = rng.pick(agents).id;
+  }
   const vfxStudios: VfxStudio[] = [];
   for (let i = 0; i < c.vfx; i++) vfxStudios.push(mintVfxStudio(rng, content));
   return { people, vfxStudios };

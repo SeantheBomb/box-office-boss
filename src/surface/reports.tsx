@@ -66,6 +66,57 @@ export function StandingsChart({ sim, compact }: { sim: Sim; compact?: boolean }
   );
 }
 
+/** This week at the box office: every picture in theaters, ranked by weekend gross. */
+export function WeekChart({ sim, openDossier }: { sim: Sim; openDossier?: (kind: "movie" | "person", id: string) => void }) {
+  const chart = sim.state.weekChart ?? [];
+  if (!chart.length) return <p style={{ color: "#666", fontSize: 12 }}>Nothing in theaters this week. The popcorn goes stale citywide.</p>;
+  return (
+    <table>
+      <thead>
+        <tr><th>#</th><th>Picture</th><th>Studio</th><th>Weekend</th><th>Total</th><th>Wk</th></tr>
+      </thead>
+      <tbody>
+        {chart.map((row, i) => {
+          const m = sim.movie(row.movieId);
+          if (!m) return null;
+          const wk = Math.floor((sim.state.day - (m.releaseDay ?? 0)) / 7);
+          const mine = m.studio === 0;
+          return (
+            <tr key={row.movieId} style={mine ? { background: "#fdf3d0", fontWeight: "bold" } : undefined}>
+              <td>{i + 1}</td>
+              <td style={openDossier ? { cursor: "pointer", textDecoration: "underline" } : undefined} onClick={() => openDossier?.("movie", m.id)}>{m.title}</td>
+              <td>{sim.state.studios[m.studio].name.split(" ")[0]}{mine ? " ★" : ""}</td>
+              <td>{money(row.gross)}</td>
+              <td>{money(m.weeklyGross.reduce((a, b) => a + b, 0))}</td>
+              <td>{wk + 1}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+export function MandateBoard({ sim }: { sim: Sim }) {
+  const active = sim.state.mandates.filter((md) => !md.done && !md.failed);
+  const closed = sim.state.mandates.filter((md) => md.done || md.failed).slice(-3);
+  if (!active.length && !closed.length) return null;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <h3>Board Notes</h3>
+      {active.map((md) => {
+        const d = calDate(md.deadlineDay);
+        return <p key={md.id} style={{ fontSize: 13 }}>📌 "{md.text}" — due WK {d.week} YR {d.year}</p>;
+      })}
+      {closed.map((md) => (
+        <p key={md.id} style={{ fontSize: 12, opacity: 0.6, textDecoration: md.failed ? "line-through" : "none" }}>
+          {md.failed ? "✖" : "✔"} {md.text}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function FunnelReport({ sim, movie }: { sim: Sim; movie: Movie }) {
   const funnel = sim.state.flags[`funnel_${movie.id}`] as FunnelResult | undefined;
   if (!funnel) return <div>No release data yet for {movie.title}.</div>;

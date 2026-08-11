@@ -24,7 +24,7 @@ export function disciplinedEmailPolicy(maxActive = 3) {
       const parked = s.state.movies.filter((m) => m.studio === 0 && m.phase === "development").length;
       return parked > 0 && s.player.cash > s.content.economy.producers.hireCost * 3 ? "hireProducer" : "ignore";
     }
-    for (const p of ["approveProduction", "expandBudget"]) if (actions.some((a) => a.id === p)) return p;
+    for (const p of ["approveProduction", "expandBudget", "divaIndulge", "triage_push"]) if (actions.some((a) => a.id === p)) return p;
     const vfxBids = actions.filter((a) => a.id.startsWith("vfx_"));
     if (vfxBids.length) {
       return vfxBids
@@ -42,8 +42,12 @@ export function disciplinedMeetingPolicy(maxActive = 3) {
     if (active >= maxActive && choices.some((c) => c.id === "pos_pass")) return "pos_pass";
     const gl = choices.find((c) => c.id === "pos_greenlight");
     if (gl) return gl.id;
-    const ride = choices.find((c) => c.id === "ride");
-    return (ride ?? choices[0]).id;
+    // festival: keep the checkbook closed; packaging: first candidate is fine; packages: decline
+    for (const id of ["pass", "ride", "pkg_decline"]) {
+      const c = choices.find((x) => x.id === id);
+      if (c) return c.id;
+    }
+    return choices[0].id;
   };
 }
 

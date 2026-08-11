@@ -1,7 +1,7 @@
 // The dialogue-encounter scene. Remounted per meeting via key (back-to-back queue safe).
 // Counterpart dossier is one click away — you always know who you're talking to.
 
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import type { Sim } from "../kernel/sim";
 import type { SimEvent } from "../kernel/types";
 import { MeetingSession, type Beat } from "../kernel/meetings";
@@ -24,6 +24,22 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
   const sceneClass = SCENE_CLASS[meetingDef.scene] ?? "meetingRoom";
   const person = beat.portraitId ? sim.person(beat.portraitId) : undefined;
   const movie = sim.movie(event.data.movieId);
+  // number keys pick lines; Enter continues — no mouse required, no ambiguity about what's clickable
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (beat.done && (e.code === "Enter" || e.code === "Space")) {
+        e.preventDefault();
+        onDone();
+        return;
+      }
+      const n = parseInt(e.key, 10);
+      if (!beat.done && n >= 1 && n <= (beat.choices?.length ?? 0)) {
+        setBeat(session.choose(beat.choices![n - 1].id));
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [beat]);
   return (
     <div class={`meeting ${sceneClass}`}>
       <div class="counterpart">
@@ -56,12 +72,13 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
         <div class="speaker">{meetingDef.title ?? event.type}</div>
         <div class="text">{beat.text}</div>
         {beat.done ? (
-          <button class="continue" onClick={onDone}>Continue ▸</button>
+          <button class="continue" onClick={onDone}>Continue ▸ <span class="key-hint">(Enter)</span></button>
         ) : (
           <div class="choices">
-            {(beat.choices ?? []).map((c) => (
+            <div class="choose-label">— choose your line —</div>
+            {(beat.choices ?? []).map((c, i) => (
               <button key={c.id} onClick={() => setBeat(session.choose(c.id))}>
-                “{c.line}”
+                <span class="choice-num">{i + 1}</span> “{c.line}”
               </button>
             ))}
           </div>

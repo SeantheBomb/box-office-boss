@@ -56,6 +56,7 @@
     { "id": "midsize", "weight": 3, "dailyCost": [15000, 30000], "maxShots": [6, 14], "rating": [50, 75] },
     { "id": "farm", "weight": 2, "dailyCost": [30000, 60000], "maxShots": [15, 30], "rating": [35, 60] }
   ],
-  "counts": { "cast": 36, "directors": 14, "writers": 12, "producers": 10, "vfx": 6, "critics": 5 },
-  "criticPersonas": ["acid", "gushing", "academic", "populist", "contrarian"]
+  "counts": { "cast": 36, "directors": 14, "writers": 12, "producers": 10, "vfx": 6, "critics": 5, "agents": 6 },
+  "criticPersonas": ["acid", "gushing", "academic", "populist", "contrarian"],
+  "agentArchetypes": ["shark", "velvet-glove", "old-lion", "up-and-comer", "cousin-of-somebody", "unnervingly-calm"]
 }

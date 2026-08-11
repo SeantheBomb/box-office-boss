@@ -70,7 +70,52 @@
     "patience-tell-mid": ["(A polite nod. The folder stays where it is.)", "(They glance at their phone, then back. Still in the room.)", "(They refill their water. Buying time or staying hydrated. Unclear.)"],
     "patience-tell-low": ["(They check their watch with their whole arm.)", "(The folder is slowly migrating back into their bag.)", "(They just said 'anyway' to nothing. Land the plane.)"],
     "standup-free-producer": ["{producer} has nothing on their desk and keeps reorganizing it meaningfully.", "{producer}: \"My calendar is a desert. Feed me a project.\"", "{producer} is 'between pictures', which is producer for bored and dangerous."],
-    "standup-overloaded": ["{producer} is running {n} pictures and one visible eye twitch.", "{producer} answered 'which movie?' to a question about lunch.", "{producer} has {n} projects and has started numbering their sighs."]
+    "standup-overloaded": ["{producer} is running {n} pictures and one visible eye twitch.", "{producer} answered 'which movie?' to a question about lunch.", "{producer} has {n} projects and has started numbering their sighs."],
+    "pitch-frame": [
+      "{greeting} {title} — {genre}, {logline}.",
+      "{greeting} Picture this: {logline}. I'm calling it {title}. {genre}. You're welcome.",
+      "{greeting} Three words: {title}. Okay, that's {titleWords} words, but listen — {logline}. Pure {genre}.",
+      "{greeting} I woke up at 4am and wrote {title} in one sitting. {genre}. {logline}. My hand still hurts.",
+      "{greeting} The elevator version: {logline}. Title: {title}. Genre: {genre}. Floor: yours."
+    ],
+    "pitch-close": [
+      "I'm shopping it around in two weeks either way.",
+      "My agent says {rival} wants a look. My agent lies, but not always.",
+      "This one's got legs. Possibly a tail. Read it.",
+      "If you pass, fine — but I'm naming a villain after you."
+    ],
+    "diva-demand": [
+      "{name} now refers to the script as 'the suggestion document.'",
+      "{name} wants the character renamed after their yacht.",
+      "{name} is demanding final say on the poster font. There is a mood board.",
+      "{name} would like their trailer moved 'somewhere with better light, spiritually.'",
+      "{name} has requested the ending be reshot so their character 'wins more.'"
+    ],
+    "mandate-issued": ["The board has a NOTE, and the note is law:", "From the top floor, with love and a deadline:", "New directive. The board voted. You weren't invited:"],
+    "lunch-gossip": [
+      "\"{rival} is bleeding money on that {genre} thing. Everyone knows. Nobody says.\"",
+      "\"Word is {genre} testing through the roof this season. You didn't hear it from me.\"",
+      "\"{name} is unhappy over at {rival}. A phone call away, is all I'm saying.\"",
+      "\"They reshot the ending twice. TWICE. The bond company is circling.\""
+    ],
+    "regret-salt": [
+      "You had this on your desk. The desk remembers.",
+      "Sources confirm YOU passed. The sources are us. We're the sources.",
+      "Somewhere, a napkin with your 'no' on it is worth money."
+    ],
+    "premiere-carpet": [
+      "Flashbulbs. Someone screams a name — possibly yours, possibly the parking valet's.",
+      "The carpet is red, the smiles are white, the knives are out.",
+      "A journalist asks how you're feeling. You are legally required to say 'excited.'"
+    ],
+    "premiere-crowd-good": ["They GASPED at the midpoint. A real gasp. You bottled lightning.", "Applause at the title card. That's rare. That's money."],
+    "premiere-crowd-mixed": ["Laughter in some right places. Also some wrong ones.", "The audience is polite. Polite is a four-letter word in this town."],
+    "premiere-crowd-bad": ["Row F is on their phones. Row G is asleep. Row H left.", "The silence has texture. You will remember this silence."],
+    "agent-package": [
+      "\"One more thing — {star} comes with {extra}. It's a package. Like a gift basket, if gift baskets billed by the hour.\"",
+      "\"You want {star}? Wonderful. You also want {extra}. You just don't know it yet. It's a package.\""
+    ],
+    "festival-banter": ["The air smells of pine and desperation.", "Every buyer here has a parka and a checkbook. You have both.", "A director just cried on a panel. Bidding doubled."]
   },
   "toneTiers": ["warm", "curt", "cold", "hostile"]
 }

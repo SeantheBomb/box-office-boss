@@ -11,9 +11,10 @@ import { saveLocal, loadLocal, clearLocal, exportSave, importSave } from "../ker
 import { MeetingScene } from "./meeting";
 import { Editor } from "../editor/editor";
 import { useWindows, Window } from "./windows";
+import { BUILD_VERSION, CHANGELOG } from "../version";
 import { MailApp } from "./mail";
 import { CalendarApp } from "./calendar";
-import { StandingsChart, ProductionBoard, AudienceReport } from "./reports";
+import { StandingsChart, ProductionBoard, AudienceReport, WeekChart, MandateBoard } from "./reports";
 import { MovieDossier, PersonDossier } from "./dossiers";
 
 const APPS: { app: string; title: string; icon: string; w?: number; h?: number }[] = [
@@ -24,8 +25,23 @@ const APPS: { app: string; title: string; icon: string; w?: number; h?: number }
   { app: "audience", title: "👥 Audience", icon: "👥", w: 620, h: 420 },
 ];
 
+function detectStaleSave(): boolean {
+  try {
+    const raw = localStorage.getItem("bob.save");
+    if (!raw) return false;
+    return JSON.parse(raw).version !== 2;
+  } catch {
+    return false;
+  }
+}
+
 export function App({ content }: { content: Content }) {
-  const [sim, setSim] = useState<Sim>(() => loadLocal(content) ?? newSeededRun(content, (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0));
+  // breaking-change gate: an old save exists — tell the player before we touch anything
+  const [staleSave, setStaleSave] = useState(detectStaleSave);
+  const [showChangelog, setShowChangelog] = useState(() => localStorage.getItem("bob.lastSeenVersion") !== BUILD_VERSION && !detectStaleSave());
+  const [sim, setSim] = useState<Sim>(() =>
+    detectStaleSave() ? newSeededRun(content, 1) /* placeholder until the player confirms the reset */ : loadLocal(content) ?? newSeededRun(content, (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0)
+  );
   const [, setTick] = useState(0);
   const bump = () => setTick((t) => t + 1);
   const [speed, setSpeed] = useState(1);
@@ -35,7 +51,7 @@ export function App({ content }: { content: Content }) {
   const [toast, setToast] = useState<string | undefined>();
   const wm = useWindows();
   const speedRef = useRef(speed);
-  speedRef.current = editorOpen || drawerOpen || meetingQueue.length > 0 || sim.state.gameOver ? 0 : speed;
+  speedRef.current = editorOpen || drawerOpen || staleSave || showChangelog || meetingQueue.length > 0 || sim.state.gameOver ? 0 : speed;
   const simRef = useRef(sim);
   simRef.current = sim;
 
@@ -50,11 +66,13 @@ export function App({ content }: { content: Content }) {
 
   const skipToNextEvent = () => {
     const s = simRef.current;
+    const logLen = s.state.eventLog.length;
     const inboxLen = s.state.inbox.length;
     const collected: SimEvent[] = [];
     for (let i = 0; i < 60 && !s.state.gameOver; i++) {
       collected.push(...s.advanceDay());
-      if (collected.length || s.state.inbox.length !== inboxLen) break;
+      // any event resolving counts — outcomes included, not just meetings
+      if (collected.length || s.state.eventLog.length !== logLen || s.state.inbox.length !== inboxLen) break;
     }
     collectMeetings(collected);
     saveLocal(s);
@@ -162,7 +180,10 @@ export function App({ content }: { content: Content }) {
       case "standings":
         return (
           <div class="report-sheet windowed">
-            <h3>Box Office Standings — released-picture profit</h3>
+            <MandateBoard sim={sim} />
+            <h3>This Week at the Box Office</h3>
+            <WeekChart sim={sim} openDossier={openDossier} />
+            <h3 style={{ marginTop: 14 }}>Standings — released-picture profit</h3>
             <StandingsChart sim={sim} />
           </div>
         );
@@ -175,13 +196,13 @@ export function App({ content }: { content: Content }) {
       case "movieDossier":
         return (
           <div class="report-sheet windowed">
-            <MovieDossier sim={sim} movieId={props?.id} openDossier={openDossier} />
+            <MovieDossier sim={sim} movieId={props?.id} openDossier={openDossier} bump={bump} />
           </div>
         );
       case "personDossier":
         return (
           <div class="report-sheet windowed">
-            <PersonDossier sim={sim} personId={props?.id} openDossier={openDossier} />
+            <PersonDossier sim={sim} personId={props?.id} openDossier={openDossier} bump={bump} />
           </div>
         );
     }
@@ -254,6 +275,44 @@ export function App({ content }: { content: Content }) {
             </div>
           </div>
         )}
+        {staleSave && (
+          <div class="modal-veil">
+            <div class="update-modal">
+              <h3>🎬 Studio Renovation — v{BUILD_VERSION}</h3>
+              <p>
+                A major update shipped, and it rebuilt the studio from the foundation up. Your old save predates the new systems
+                (producers, packaging, the works) and <b>can't be carried forward</b>.
+              </p>
+              <ul>{CHANGELOG.map((c, i) => <li key={i}>{c}</li>)}</ul>
+              <p><b>To play the new version, your save needs to be reset.</b> A fresh studio (with a preseeded, mid-flight slate) starts immediately.</p>
+              <button
+                class="update-confirm"
+                onClick={() => {
+                  clearLocal();
+                  const s = newSeededRun(content, (Date.now() ^ (Math.random() * 0xffffffff)) >>> 0);
+                  setSim(s);
+                  saveLocal(s);
+                  localStorage.setItem("bob.lastSeenVersion", BUILD_VERSION);
+                  setStaleSave(false);
+                }}
+              >
+                Reset save & take the chair ▸
+              </button>
+            </div>
+          </div>
+        )}
+        {showChangelog && !staleSave && (
+          <div class="modal-veil" onClick={() => { localStorage.setItem("bob.lastSeenVersion", BUILD_VERSION); setShowChangelog(false); }}>
+            <div class="update-modal" onClick={(e) => e.stopPropagation()}>
+              <h3>📋 Studio Memo — v{BUILD_VERSION}</h3>
+              <p>While you were out, the following changed on the lot:</p>
+              <ul>{CHANGELOG.map((c, i) => <li key={i}>{c}</li>)}</ul>
+              <button class="update-confirm" onClick={() => { localStorage.setItem("bob.lastSeenVersion", BUILD_VERSION); setShowChangelog(false); }}>
+                Noted. Back to work ▸
+              </button>
+            </div>
+          </div>
+        )}
         {drawerOpen && (
           <DrawerModal
             sim={sim}
@@ -280,11 +339,19 @@ export function App({ content }: { content: Content }) {
       <div class="chrome">
         <span class="date">{fmtDate(st.day)}</span>
         <div class="daybar"><div style={{ width: `${Math.min(100, st.timeOfDay * 100)}%` }} /></div>
-        <button class={speed === 0 ? "on" : ""} onClick={() => setSpeed(0)}>⏸</button>
-        <button class={speed === 1 ? "on" : ""} onClick={() => setSpeed(1)}>1×</button>
-        <button class={speed === 2 ? "on" : ""} onClick={() => setSpeed(2)}>2×</button>
-        <button class={speed === 4 ? "on" : ""} onClick={() => setSpeed(4)}>4×</button>
-        <button onClick={skipToNextEvent} title="Jump to the next meeting or email">⏭ next event</button>
+        {meetingQueue.length > 0 ? (
+          <span class="forced-pause" title="Time is paused: someone is in the room with you. Finish the meeting to get the clock back.">
+            ⏸ in a meeting
+          </span>
+        ) : (
+          <>
+            <button class={speed === 0 ? "on" : ""} onClick={() => setSpeed(0)}>⏸</button>
+            <button class={speed === 1 ? "on" : ""} onClick={() => setSpeed(1)}>1×</button>
+            <button class={speed === 2 ? "on" : ""} onClick={() => setSpeed(2)}>2×</button>
+            <button class={speed === 4 ? "on" : ""} onClick={() => setSpeed(4)}>4×</button>
+            <button onClick={skipToNextEvent} title="Jump ahead to the next calendar event or email">⏭ next event</button>
+          </>
+        )}
         <span style={{ fontSize: 12, opacity: 0.8 }}>
           ✉ {unread} unread{actionable ? ` · ${actionable} need replies` : ""}
         </span>

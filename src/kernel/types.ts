@@ -41,7 +41,7 @@ export function fmtDate(day: number): string {
 }
 
 // ---------- people ----------
-export type Role = "cast" | "director" | "writer" | "producer" | "vfx" | "critic";
+export type Role = "cast" | "director" | "writer" | "producer" | "vfx" | "critic" | "agent";
 
 export interface Person {
   id: string;
@@ -83,6 +83,26 @@ export interface Person {
   // scheduling
   busyUntil: number; // day; talent locked to a production until then
   signedByStudio?: number; // studio index currently employing
+  agentId?: string; // cast & directors are repped
+}
+
+export interface Incident {
+  day: number;
+  kind: string;
+  text: string; // the narrative as it was reported
+  cost: number;
+  delay: number;
+  resolution?: string; // what you did about it
+}
+
+export interface Mandate {
+  id: string;
+  text: string;
+  kind: "releaseSeason" | "beatRival" | "budgetCap" | "releaseCount";
+  param: any;
+  deadlineDay: number;
+  done?: boolean;
+  failed?: boolean;
 }
 
 export interface FilmCredit {
@@ -171,6 +191,12 @@ export interface Movie {
   estRevenue?: number; // rough projection shown in pitch/dossier
   shotList?: ShotBlock[]; // built at pre-production wrap
   pitchLogline?: string;
+  incidents: Incident[];
+  announcedRelease?: number; // publicly dated (trades know) before the actual release event
+  fromPassedPitch?: boolean; // you said no to this one — the trades remember
+  acquired?: boolean; // festival pickup, not homegrown
+  pressTours: number;
+  testScreened?: boolean;
 }
 
 // ---------- studios ----------
@@ -274,6 +300,9 @@ export interface RunState {
   nextId: number;
   gameOver?: { kind: "bankrupt" | "fired"; day: number; epitaph?: string };
   flags: Record<string, any>;
+  eventLog: SimEvent[]; // processed events, for the calendar's past (capped)
+  mandates: Mandate[];
+  weekChart: { movieId: string; gross: number }[]; // this week's box office, ranked
 }
 
 export interface PendingMeeting {

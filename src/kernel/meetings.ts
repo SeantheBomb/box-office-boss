@@ -169,6 +169,21 @@ export class MeetingSession {
     const cast: Person = this.data.cast;
     const movie: Movie = this.data.movie;
     const rng = this.sim.rng.get("meetings");
+    // stage 1: the agent's package rider
+    if (this.stage === 1) {
+      const extra: Person | undefined = this.data.packageExtra;
+      const agent = this.sim.person(cast.agentId);
+      if (choiceId === "pkg_accept" && extra) {
+        movie.castIds.push(extra.id);
+        extra.busyUntil = this.sim.state.day + 150;
+        extra.signedByStudio = 0;
+        const disc = this.sim.content.economy.agents.packageDiscount;
+        const rateCost = Math.round((extra.dailyRate ?? 15000) * disc * 30);
+        movie.budget += rateCost;
+        return { speaker: agent?.name ?? "The Agent", portraitId: agent?.id, text: `"Wonderful. Two for the price of one point eight." ${extra.name} joins the picture. The gift basket had a person in it.`, done: true };
+      }
+      return { speaker: agent?.name ?? "The Agent", portraitId: agent?.id, text: `"No package? Fine. Remembered, but fine." The call ends with expensive politeness.`, done: true };
+    }
     let key: keyof typeof this.M.reactions = "accept";
     let signed = true;
     let rateMult = 1;
@@ -215,6 +230,31 @@ export class MeetingSession {
       const rateCost = Math.round((cast.dailyRate ?? 20000) * rateMult * 30);
       movie.budget += rateCost;
       this.sim.state.flags[`rate_${movie.id}_${cast.id}`] = rateCost;
+      // the agent materializes: it's a package, it was always a package
+      const A = this.sim.content.economy.agents;
+      const agent = this.sim.person(cast.agentId);
+      if (agent && rng.chance(A.packageChance)) {
+        const stablemate = this.sim.state.people.find(
+          (p) => p.role === "cast" && p.agentId === agent.id && p.id !== cast.id && p.busyUntil <= this.sim.state.day && !movie.castIds.includes(p.id)
+        );
+        if (stablemate) {
+          this.stage = 1;
+          this.data.packageExtra = stablemate;
+          const disc = Math.round((stablemate.dailyRate ?? 15000) * A.packageDiscount * 30);
+          return {
+            speaker: agent.name,
+            portraitId: agent.id,
+            text: `${this.dlg().pick(this.M.reactions[key] as string[])}\nYour phone buzzes before the door closes — it's ${agent.name}, the agent. ${fill(
+              this.sim.line("agent-package", { star: cast.name, extra: stablemate.name }),
+              {}
+            )}\n(${stablemate.name}: coop ${stablemate.cooperation}, improv ${stablemate.improv}, fame ${stablemate.fame} — ${money(disc)} for the run.)`,
+            choices: [
+              { id: "pkg_accept", line: `Take the package (${money(disc)} — the agent smiles somewhere)` },
+              { id: "pkg_decline", line: "Just the one star, thanks." },
+            ],
+          };
+        }
+      }
     }
     return {
       speaker: cast.name,
@@ -230,14 +270,17 @@ export class MeetingSession {
     const tone = ["warm", "curt", "cold", "hostile"][tier];
     const result = this.sim.applyQuarterResult();
     this.data.result = result;
+    const hit = result.qProfit >= result.expectation;
     const open = bankLine(this.dlg(), this.content, `board-open-${tone}`);
+    const mandate = this.sim.state.mandates.filter((md) => !md.done && !md.failed).pop();
+    const mandateLine = mandate ? `\nStanding note: "${mandate.text}"` : "";
+    // a winning quarter gets a winner's script — you're taking a lap, not a deposition
+    const choices = hit ? (this.M.victories as any[]) : (this.M.defenses as any[]);
     return {
       speaker: "The Board",
       portraitId: "board",
-      text: `${open}\nQuarter: ${money(result.qProfit)} against an expectation of ${money(result.expectation)}. ${
-        result.qProfit >= result.expectation ? "Adequate." : "Explain."
-      }`,
-      choices: (this.M.defenses as any[]).map((d) => ({ id: d.id, line: d.line })),
+      text: `${open}\nQuarter: ${money(result.qProfit)} against an expectation of ${money(result.expectation)}. ${hit ? "The chairman almost smiled." : "Explain."}${mandateLine}`,
+      choices: choices.map((d: any) => ({ id: d.id, line: d.line })),
     };
   }
 
@@ -246,7 +289,21 @@ export class MeetingSession {
     const rng = this.sim.rng.get("meetings");
     const hit = result.qProfit >= result.expectation;
     let mood: "satisfied" | "neutral" | "displeased" = hit ? "satisfied" : "neutral";
-    if (choiceId === "data") {
+    if (choiceId === "credit") {
+      this.sim.state.patience += 3;
+      for (const p of this.sim.staffProducers()) p.relationship += 4;
+      mood = "satisfied";
+    } else if (choiceId === "gloat") {
+      mood = rng.chance(0.7) ? "satisfied" : "neutral"; // boards enjoy winners, to a point
+      this.sim.state.patience += rng.chance(0.5) ? 2 : 0;
+    } else if (choiceId === "askMore") {
+      if (rng.chance(0.5)) {
+        const gift = 5_000_000;
+        this.sim.earn(0, gift);
+        return { speaker: "The Board", portraitId: "board", text: `A pause. A nod. "${money(gift)}. Don't make us regret the strings we didn't attach." (They attached strings.)`, done: true };
+      }
+      mood = "neutral";
+    } else if (choiceId === "data") {
       if (!hit && this.sim.player.history.length > 4 && rng.chance(0.5)) mood = "neutral";
       else if (!hit) mood = "displeased";
     } else if (choiceId === "blame") {
@@ -254,7 +311,6 @@ export class MeetingSession {
       mood = hit ? "satisfied" : "neutral";
     } else if (choiceId === "blameDirector") {
       mood = hit ? "satisfied" : rng.chance(0.4) ? "neutral" : "displeased";
-      // it gets back to them
       const dirs = this.sim.state.people.filter((p) => p.role === "director" && p.signedByStudio === 0);
       for (const d of dirs) d.relationship -= 10;
     }
@@ -266,6 +322,215 @@ export class MeetingSession {
       text: this.dlg().pick(this.M.reactions[mood] as string[]),
       done: true,
     };
+  }
+
+  // ---------- packaging ----------
+  // The exec's real craft: assemble director + leads from real candidates with real tradeoffs.
+  start_packaging(): Beat {
+    const m = this.sim.movie(this.event.data.movieId);
+    if (!m || m.phase !== "script") return { speaker: "Packaging", text: "This project moved on without a packaging session.", done: true };
+    this.data.movie = m;
+    const day = this.sim.state.day;
+    const free = this.sim.state.people.filter((p) => p.role === "director" && p.busyUntil <= day);
+    const ideal = this.sim.person((m as any).idealDirectorId);
+    const cands: Person[] = [];
+    if (ideal && ideal.busyUntil <= day) cands.push(ideal);
+    for (const d of [...free].sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0))) {
+      if (cands.length >= 3) break;
+      if (!cands.includes(d)) cands.push(d);
+    }
+    this.data.directorCands = cands;
+    if (!cands.length) {
+      return { speaker: "Packaging", text: `Every director in town is booked. ${m.title} shoots with whoever pre-pro can find.`, done: true, };
+    }
+    return {
+      speaker: `Packaging: ${m.title}`,
+      portraitId: this.sim.person(m.producerId)?.id,
+      text: `${this.sim.person(m.producerId)?.name ?? "Your producer"} spreads headshots across the desk. "Director first. Everything else follows the director."`,
+      choices: cands.map((d) => ({
+        id: `dir_${d.id}`,
+        line: `${d.name} — ${d.archetype.replace(/-/g, " ")} · craft ${d.avgRating} · ~${d.avgVfxShots} VFX · ${d.avgLocations} locations · ${d.avgReshoots} reshoots · runs a ${d.avgCastCooperation}-harmony set${d === ideal ? " (the writer's pick)" : ""}`,
+      })),
+    };
+  }
+
+  choose_packaging(choiceId: string): Beat {
+    const m: Movie = this.data.movie;
+    if (choiceId.startsWith("dir_")) {
+      const d = this.sim.person(choiceId.slice(4))!;
+      m.directorId = d.id;
+      d.busyUntil = this.sim.state.day + 200;
+      d.signedByStudio = 0;
+      // lead options: three flavors of star math
+      const day = this.sim.state.day;
+      const freeCast = this.sim.state.people.filter((p) => p.role === "cast" && p.busyUntil <= day);
+      const byFame = [...freeCast].sort((a, b) => (b.fame ?? 0) - (a.fame ?? 0));
+      const byRate = [...freeCast].sort((a, b) => (a.dailyRate ?? 0) - (b.dailyRate ?? 0));
+      const byCoop = [...freeCast].sort((a, b) => (b.cooperation ?? 0) - (a.cooperation ?? 0));
+      const opts: { id: string; label: string; ids: string[] }[] = [];
+      const pair = (arr: Person[], tag: string, why: string) => {
+        const pick = arr.filter((p) => !opts.some((o) => o.ids.includes(p.id))).slice(0, 2);
+        if (pick.length) opts.push({ id: `cast_${tag}`, label: `${pick.map((p) => p.name).join(" + ")} — ${why}`, ids: pick.map((p) => p.id) });
+      };
+      pair(byFame, "fame", `star power (fame ${byFame[0]?.fame ?? "?"}, rates to match)`);
+      pair(byRate, "value", `the value play (cheap, hungry)`);
+      pair(byCoop, "smooth", `the no-drama set (cooperation first)`);
+      this.data.castOpts = opts;
+      if (!opts.length) {
+        this.sim.startPrepro(m);
+        return { speaker: `Packaging: ${m.title}`, text: `${d.name} is in. Casting will have to scrape the open-call barrel — town's busy.`, done: true };
+      }
+      return {
+        speaker: `Packaging: ${m.title}`,
+        portraitId: d.id,
+        text: `${d.name} signs on the line. "Now — who am I pointing this camera at?"`,
+        choices: opts.map((o) => ({ id: o.id, line: o.label })),
+      };
+    }
+    const opt = (this.data.castOpts as any[]).find((o) => o.id === choiceId);
+    if (opt) m.idealCastIds = opt.ids;
+    this.sim.startPrepro(m);
+    const names = opt ? opt.ids.map((id: string) => this.sim.person(id)?.name).join(" and ") : "the leads";
+    return {
+      speaker: `Packaging: ${m.title}`,
+      portraitId: m.producerId ? this.sim.person(m.producerId)?.id : undefined,
+      text: `The package: ${this.sim.person(m.directorId)?.name} directing, ${names} up top. Casting interviews go out — agents get their calls. Pre-production rolls.`,
+      done: true,
+    };
+  }
+
+  // ---------- premiere ----------
+  start_premiere(): Beat {
+    const m = this.sim.movie(this.event.data.movieId);
+    if (!m) return { speaker: "Premiere", text: "The theater is dark. Wrong night?", done: true };
+    this.data.movie = m;
+    return {
+      speaker: "Premiere Night",
+      portraitId: "crowd",
+      text: `The marquee reads "${m.title}". ${this.sim.line("premiere-carpet")}\nA microphone appears under your chin.`,
+      choices: (this.M.carpetLines as any[]).map((c) => ({ id: c.id, line: c.line })),
+    };
+  }
+
+  choose_premiere(choiceId: string): Beat {
+    const m: Movie = this.data.movie;
+    if (this.stage === 0) {
+      this.stage = 1;
+      if (choiceId === "bold") m.hype = Math.min(100, m.hype + 4);
+      const fan = m.fanScore ?? 50;
+      const crowd = fan > 65 ? "good" : fan > 45 ? "mixed" : "bad";
+      const stars = m.reviews.length ? (m.reviews.reduce((s, r) => s + r.stars, 0) / m.reviews.length).toFixed(1) : "?";
+      return {
+        speaker: "Premiere Night",
+        portraitId: "crowd",
+        text: `Lights down. Ninety-some minutes later:\n${this.sim.line(`premiere-crowd-${crowd}`)}\nFirst reviews hit phones at the afterparty: ${stars}★. Your table looks at you. Glasses hover.`,
+        choices: (this.M.toasts as any[]).map((t) => ({ id: t.id, line: t.line })),
+      };
+    }
+    const star = this.sim.person(m.castIds[0]);
+    const director = this.sim.person(m.directorId);
+    if (choiceId === "star" && star) star.relationship += 8;
+    if (choiceId === "director" && director) director.relationship += 8;
+    if (choiceId === "room") {
+      if (star) star.relationship += 3;
+      if (director) director.relationship += 3;
+    }
+    return {
+      speaker: "Premiere Night",
+      portraitId: "crowd",
+      text: `Glasses up. Whatever the numbers say Monday, tonight the studio bought the good champagne.${(m.fanScore ?? 0) > 65 ? " And tonight, it's earned." : ""}`,
+      done: true,
+    };
+  }
+
+  // ---------- lunch ----------
+  start_lunch(): Beat {
+    const p = this.sim.person(this.event.data.personId);
+    if (!p) return { speaker: "Lunch", text: "They cancelled. Their assistant sounded genuinely sorry, which means they weren't.", done: true };
+    this.data.person = p;
+    return {
+      speaker: `Lunch with ${p.name}`,
+      portraitId: p.id,
+      text: `${p.name} orders ${["the fish, off-menu", "a salad they won't eat", "two espressos, no food", "whatever you're having, which is a power move"][this.sim.rng.get("meetings").int(0, 3)]}. The table is yours.`,
+      choices: (this.M.plays as any[]).map((c) => ({ id: c.id, line: c.line })),
+    };
+  }
+
+  choose_lunch(choiceId: string): Beat {
+    const p: Person = this.data.person;
+    const rng = this.sim.rng.get("meetings");
+    if (choiceId === "flatter") {
+      p.relationship += rng.int(6, 12);
+      const credit = p.filmography[p.filmography.length - 1];
+      return { speaker: `Lunch with ${p.name}`, portraitId: p.id, text: `${credit ? `You bring up ${credit.title}. ` : ""}They wave it off with the hand not holding the fork, then talk about it for nineteen minutes. The check arrives pre-warmed.`, done: true };
+    }
+    if (choiceId === "business") {
+      p.relationship += 4;
+      const free = p.busyUntil <= this.sim.state.day;
+      return {
+        speaker: `Lunch with ${p.name}`,
+        portraitId: p.id,
+        text: free
+          ? `"For you? My calendar could open." (${p.name} is available — strike while the entrée is hot.)`
+          : `"I'm committed until day ${p.busyUntil}. After that — call me before anyone else does."`,
+        done: true,
+      };
+    }
+    // gossip
+    p.relationship += 3;
+    const rivals = this.sim.state.studios.filter((s) => !s.isPlayer && !s.bankrupt);
+    const rival = rivals.length ? rng.pick(rivals) : undefined;
+    const hotGenre = Object.entries(this.sim.state.audience.fads).sort((a, b) => b[1] - a[1])[0][0];
+    const unhappy = rng.pick(this.sim.state.people.filter((x) => x.role === "cast" && x.signedByStudio !== 0 && x.signedByStudio !== undefined)) as Person | undefined;
+    const gossip = this.sim.line("lunch-gossip", { rival: rival?.name ?? "somebody", genre: hotGenre, name: unhappy?.name ?? "a name you'd know" });
+    return { speaker: `Lunch with ${p.name}`, portraitId: p.id, text: `They glance around, lean in.\n${gossip}\nWorth the price of the fish.`, done: true };
+  }
+
+  // ---------- festival ----------
+  start_festival(): Beat {
+    const rng = this.sim.rng.get("meetings");
+    const F = this.sim.content.economy.festival;
+    const films: any[] = [];
+    for (let i = 0; i < F.films; i++) {
+      const genre = rng.pick(Object.keys(this.sim.content.pitches.genres));
+      const quality = rng.int(F.qualityRange[0], F.qualityRange[1]);
+      const price = Math.round((F.priceRange[0] + rng.next() * (F.priceRange[1] - F.priceRange[0])) / 250000) * 250000;
+      films.push({ title: `${rng.pick(["The", "A"])} ${rng.pick(["Quiet", "Long", "Bright", "Hollow", "Patient"])} ${rng.pick(["Winter", "Harvest", "Door", "River", "Sound"])}`, genre, quality, price, buzz: quality + rng.int(-15, 15) });
+    }
+    this.data.films = films;
+    return {
+      speaker: "Sundown Festival",
+      portraitId: "crowd",
+      text: `${this.sim.line("festival-banter")}\nThree finished films are taking offers. You've seen the buzz scores. You have NOT seen the films — nobody buys after seeing the film, that's not how faith works.`,
+      choices: [
+        ...films.map((f: any, i: number) => ({ id: `buy_${i}`, line: `Acquire "${f.title}" (${f.genre}) — buzz ${f.buzz}/100, asking ${money(f.price)}` })),
+        { id: "pass", line: "Keep the checkbook closed. Enjoy the pine air." },
+      ],
+    };
+  }
+
+  choose_festival(choiceId: string): Beat {
+    if (choiceId === "pass") return { speaker: "Sundown Festival", portraitId: "crowd", text: "You leave with a tote bag and your money. One of these films will haunt you from a rival's slate. Probably the quiet one.", done: true };
+    const f = (this.data.films as any[])[parseInt(choiceId.slice(4), 10)];
+    if (this.sim.player.cash < f.price) return { speaker: "Sundown Festival", portraitId: "crowd", text: "Your business affairs person mouths 'we cannot afford this' across the lobby. The moment passes.", done: true };
+    const writer = this.sim.rng.get("meetings").pick(this.sim.state.people.filter((p) => p.role === "writer"));
+    const m = this.sim.createMovie(0, writer, {
+      title: f.title, genre: f.genre, subgenre: "Festival Darling", estRating: "R", targetLength: 104,
+      minBudget: f.price, estVfx: 10, hook: "FESTIVAL", logline: "you bought it on faith and a panel Q&A", idealCastIds: [],
+    } as any);
+    this.sim.spend(0, f.price);
+    m.spent = f.price;
+    m.budget = f.price;
+    m.acquired = true;
+    m.phase = "post";
+    m.dailyCost = 5000;
+    const q = f.quality;
+    m.quality = { script: q, direction: q, performance: q, vfx: Math.max(20, q - 10), polish: q };
+    m.screeningScore = f.buzz;
+    m.hype = Math.min(60, Math.round(f.buzz / 2));
+    m.actualVfx = 10;
+    this.sim.marketingEmail(m, `The ink dries on "${f.title}". It's yours. It was always going to be yours — everyone saw how you looked at it.`, true);
+    return { speaker: "Sundown Festival", portraitId: "crowd", text: `Handshakes, flashbulbs, a director openly weeping with gratitude. "${f.title}" is a ${this.sim.content.game.studioName} picture now. Marketing memo is already in your inbox.`, done: true };
   }
 
   // ---------- production review ----------

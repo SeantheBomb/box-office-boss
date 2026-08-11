@@ -55,11 +55,19 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
   const theme1 = rng.pick(P.themes as string[]);
   let theme2 = rng.pick(P.themes as string[]);
   if (theme2 === theme1) theme2 = rng.pick(P.themes as string[]);
-  const frame = rng.pick(P.loglineFrames as string[]);
-  let logline = frame
-    .replace("{theme1}", theme1)
-    .replace("{theme2}", theme2)
-    .replace("{setPiece}", rng.pick(P.setPieces as string[]));
+  const seeds: string[] = (content as any).inspiration?.loglineSeeds ?? [];
+  let logline: string;
+  if (seeds.length > 50 && rng.chance(0.35)) {
+    // a real movie's premise, straight-faced, as if it were brand new
+    logline = rng.pick(seeds).replace(/\.$/, "").toLowerCase();
+    logline = logline.charAt(0) + logline.slice(1);
+  } else {
+    const frame = rng.pick(P.loglineFrames as string[]);
+    logline = frame
+      .replace("{theme1}", theme1)
+      .replace("{theme2}", theme2)
+      .replace("{setPiece}", rng.pick(P.setPieces as string[]));
+  }
   // comps sell pictures: name-drop two real movies when the bake is present
   const realTitles: string[] = (content as any).inspiration?.titles ?? [];
   if (realTitles.length > 100 && rng.chance(0.5)) {
@@ -68,15 +76,19 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
     if (b === a) b = rng.pick(realTitles);
     logline += `. It's ${a} meets ${b}`;
   }
+  const title = mintTitle(rng, content, state);
+  const titleWords = title.replace(/[^a-zA-Z\s]/g, "").split(/\s+/).filter((w) => w.length > 3);
+  // the hook IS the pitch: subject lines derive from what's actually being sold
+  const hook = rng.pick([subgenre.toUpperCase(), theme1.toUpperCase(), ...(titleWords.length ? [rng.pick(titleWords).toUpperCase()] : [])]);
   return {
-    title: mintTitle(rng, content, state),
+    title,
     genre,
     subgenre,
     estRating: rng.pick(G.ratings as string[]),
     targetLength: Math.round(G.length[0] + rng.next() * (G.length[1] - G.length[0])),
     minBudget,
     estVfx: Math.round(G.vfx[0] + rng.next() * (G.vfx[1] - G.vfx[0])),
-    hook: rng.pick(P.titleWords.hookNoun as string[]),
+    hook,
     logline,
     idealDirectorId: idealDirector?.id,
     idealCastIds: idealCast.map((c) => c.id),

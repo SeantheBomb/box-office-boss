@@ -24,6 +24,10 @@ const EVT_LABELS: Record<string, string> = {
   rivalWrap: "🏭 rival wraps",
   producerOffer: "🤝 producer available",
   newStudioEntry: "🏗 new studio",
+  packaging: "📦 Packaging Session",
+  premiere: "🌟 PREMIERE",
+  lunch: "🍽 Lunch",
+  festival: "🎞 Sundown Festival",
 };
 
 export function CalendarApp({ sim, openDossier }: { sim: Sim; openDossier: OpenDossier }) {
@@ -74,14 +78,15 @@ export function CalendarApp({ sim, openDossier }: { sim: Sim; openDossier: OpenD
             <div class="slotlabel">{slot}</div>
             {DOW.map((_, i) => {
               const day = weekStart + i;
-              const evts = sim.state.events.filter((e) => e.day === day && e.slot === slot);
+              const upcoming = sim.state.events.filter((e) => e.day === day && e.slot === slot);
+              const past = (sim.state.eventLog ?? []).filter((e) => e.day === day && e.slot === slot);
               return (
                 <div key={i} class={`${day === today ? "today" : ""} ${i >= 5 ? "wkend" : ""}`}>
-                  {evts.map((e) => (
+                  {[...past.map((e) => ({ e, done: true })), ...upcoming.map((e) => ({ e, done: false }))].map(({ e, done }) => (
                     <div
                       key={e.id}
-                      class={`evt ${e.kind}`}
-                      title={e.type}
+                      class={`evt ${e.kind} ${done ? "done" : ""}`}
+                      title={done ? `${e.type} (completed)` : e.type}
                       onClick={() => e.data.movieId && openDossier("movie", e.data.movieId)}
                       style={e.data.movieId ? { cursor: "pointer" } : undefined}
                     >

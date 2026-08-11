@@ -2,9 +2,9 @@
   "startingCash": 60000000,
   "startingPatience": 70,
   "patienceTiers": [55, 35, 15],
-  "quarterlyExpectationBase": 2000000,
-  "quarterlyExpectationGrowth": 1.12,
-  "patienceQuarterHit": 12,
+  "quarterlyExpectationBase": 6000000,
+  "quarterlyExpectationGrowth": 1.15,
+  "patienceQuarterHit": 10,
   "patienceQuarterReward": 6,
   "patienceFlopHit": 5,
   "patienceAwardReward": 8,
@@ -22,7 +22,8 @@
     "baseDaysPerLocation": 6,
     "baseDailyCostFactor": 0.005,
     "setbackChancePerWeek": 0.16,
-    "cooperationSetbackWeight": 0.5
+    "cooperationSetbackWeight": 0.5,
+    "divaDemandChancePerWeek": 0.08
   },
   "post": {
     "baseDays": 35,
@@ -79,6 +80,14 @@
   },
   "writers": { "pitchIntervalDays": [20, 45] },
   "sequel": { "minProfit": 5000000, "fanScoreMin": 55 },
-  "preseed": { "warmupDays": 56, "handoffCashFloor": 35000000 },
+  "preseed": { "warmupDays": 56, "handoffCashFloor": 35000000, "rivalLegacyMovies": 3 },
+  "prepro": { "dailyCostFactor": 0.001 },
+  "pressTour": { "cost": 1500000, "hype": 12, "relationshipHit": 6, "maxPerMovie": 2 },
+  "testScreening": { "cost": 500000, "leakChance": 0.2, "leakHypeHit": 8 },
+  "triage": { "screeningThreshold": 45, "reshootCostFactor": 0.06, "reshootQuality": 10, "reshootDelayDays": 21, "recutCostFactor": 0.015, "recutQuality": 4, "selloffFactor": 0.55 },
+  "festival": { "week": 8, "films": 3, "priceRange": [4000000, 14000000], "qualityRange": [45, 92] },
+  "corridor": { "flinchChance": 0.35, "flinchDays": 14, "collisionWindow": 7 },
+  "regret": { "adoptChance": 0.45, "recapWeek": 47 },
+  "agents": { "count": 6, "packageChance": 0.35, "packageDiscount": 0.8 },
   "revenueEstimate": { "genreMultiplier": { "Action": 2.6, "Comedy": 2.9, "Horror": 3.6, "Drama": 2.2, "Sci-Fi": 2.5, "Thriller": 2.6, "Family": 2.8, "Western": 1.9 } }
 }

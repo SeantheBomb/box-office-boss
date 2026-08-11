@@ -30,9 +30,11 @@ export function MovieLink({ sim, id, openDossier }: { sim: Sim; id?: string; ope
   );
 }
 
-export function MovieDossier({ sim, movieId, openDossier }: { sim: Sim; movieId: string; openDossier: OpenDossier }) {
+export function MovieDossier({ sim, movieId, openDossier, bump }: { sim: Sim; movieId: string; openDossier: OpenDossier; bump?: () => void }) {
   const m = sim.movie(movieId);
   if (!m) return <div class="doss">This project has been lost to studio archaeology.</div>;
+  const P = sim.content.economy.pressTour;
+  const canTour = m.studio === 0 && ["post", "release"].includes(m.phase) && m.pressTours < P.maxPerMovie;
   const phaseRank = ["pitch", "script", "development", "prepro", "production", "post", "release", "distribute", "done"].indexOf(m.phase);
   return (
     <div class="doss">
@@ -93,11 +95,39 @@ export function MovieDossier({ sim, movieId, openDossier }: { sim: Sim; movieId:
         <h4>Money</h4>
         <table>
           <tr><td>Budget</td><td>{money(m.budget)}</td></tr>
-          <tr><td>Spent so far</td><td>{money(m.spent)}{["production", "post"].includes(m.phase) ? ` (+${money(m.dailyCost)}/day)` : ""}</td></tr>
+          <tr><td>Spent so far</td><td>{money(m.spent)}{["prepro", "production", "post"].includes(m.phase) ? ` (+${money(m.dailyCost)}/day)` : ""}</td></tr>
           {m.revenue > 0 && <tr><td>Revenue</td><td>{money(m.revenue)}</td></tr>}
-          {m.setbackCount > 0 && <tr><td>Setbacks</td><td>⚠ {m.setbackCount}</td></tr>}
+          <tr><td>Hype</td><td>{Math.round(m.hype)}/100{m.pressTours ? ` (${m.pressTours} press tour${m.pressTours > 1 ? "s" : ""})` : ""}</td></tr>
         </table>
+        {canTour && bump && (
+          <button
+            class="doss-action"
+            onClick={() => {
+              const result = sim.pressTour(m.id);
+              alert(result);
+              bump();
+            }}
+          >
+            🎤 Send the star on a press tour ({money(P.cost)} — hype +{P.hype}, star goodwill −{P.relationshipHit})
+          </button>
+        )}
       </section>
+      {(m.incidents?.length ?? 0) > 0 && (
+        <section>
+          <h4>Incident Log</h4>
+          {m.incidents.map((inc, i) => (
+            <div key={i} class="incident">
+              <div class="incident-head">
+                ⚠ Day {inc.day} · {inc.kind.replace(/([A-Z])/g, " $1").toLowerCase()}
+                {inc.cost > 0 && ` · ${money(inc.cost)}`}
+                {inc.delay > 0 && ` · +${inc.delay}d`}
+              </div>
+              <div class="incident-text">{inc.text}</div>
+              {inc.resolution && <div class="incident-res">↳ {inc.resolution}</div>}
+            </div>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
@@ -166,9 +196,10 @@ function ProductionPlan({ sim, m, openDossier }: { sim: Sim; m: Movie; openDossi
   );
 }
 
-export function PersonDossier({ sim, personId, openDossier }: { sim: Sim; personId: string; openDossier: OpenDossier }) {
+export function PersonDossier({ sim, personId, openDossier, bump }: { sim: Sim; personId: string; openDossier: OpenDossier; bump?: () => void }) {
   const p = sim.person(personId);
   if (!p) return <div class="doss">No file on this person. Suspicious.</div>;
+  const lunchable = p.role !== "critic" && bump;
   const day = sim.state.day;
   const commitments = sim.state.movies.filter(
     (m) => !["done", "cancelled"].includes(m.phase) && (m.castIds.includes(p.id) || m.directorId === p.id || m.writerId === p.id || m.producerId === p.id)
@@ -234,7 +265,20 @@ export function PersonDossier({ sim, personId, openDossier }: { sim: Sim; person
             </>
           )}
           <tr><td>Status</td><td>{p.busyUntil > day ? `committed until day ${p.busyUntil}` : "available"}</td></tr>
+          {p.agentId && <tr><td>Repped by</td><td><PersonLink sim={sim} id={p.agentId} openDossier={openDossier} /></td></tr>}
         </table>
+        {lunchable && (
+          <button
+            class="doss-action"
+            onClick={() => {
+              const ok = sim.requestLunch(p.id);
+              alert(ok ? `Lunch with ${p.name} is on the calendar. Deals happen at lunch.` : "A lunch is already booked (or they're dodging your calls).");
+              bump!();
+            }}
+          >
+            🍽 Take {p.name.split(" ")[0]} to lunch (books a calendar slot — relationships are played, not wished for)
+          </button>
+        )}
       </section>
       {commitments.length > 0 && (
         <section>
