@@ -775,3 +775,11 @@ body { background: #171512; color: var(--ink); overflow: hidden; }
 .dossier-film { width: 36px; height: 36px; display: grid; place-items: center; background: #1d2129; border-radius: 8px; font-size: 18px; }
 .dossier-none { color: #7d8794; font-size: 12px; padding: 14px; font-style: italic; }
 .dossier-app .report-sheet.windowed { flex: 1; overflow-y: auto; }
+
+/* ---- Dossier dock tile (manila file-cabinet) + tabs ---- */
+.dg-dossier { background: linear-gradient(180deg, #e8c98a, #b98d4a); }
+.dossier-tabs { display: flex; gap: 4px; padding: 6px 8px 0; background: #14161a; }
+.dossier-tabs button { background: #1d2129; border: 1px solid #2e3542; color: #9aa5b3; border-radius: 7px 7px 0 0; padding: 5px 10px; font: inherit; font-size: 11px; cursor: pointer; }
+.dossier-tabs button.on { background: #faf6ec; color: #1c1a17; border-color: #faf6ec; }
+.doss-chip { background: #efe8d8; border: 1px solid #d8cdb4; color: #4a4234; border-radius: 12px; padding: 3px 10px; font: inherit; font-size: 11px; cursor: pointer; }
+.doss-chip.on { background: #3a3428; color: #f5efdf; border-color: #3a3428; }

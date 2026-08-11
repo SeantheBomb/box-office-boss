@@ -28,6 +28,9 @@ const LEX_META = new Set([
   "comedy", "thriller", "horror", "drama", "western", "animation", "animated", "biography",
   "documentary", "film", "movie", "story", "sequel", "remake", "reboot", "novel", "based",
   "series", "musical", "fiction", "cinema", "feature", "genre", "adaptation", "anthology",
+  // real-keyword topics too heavy to play as a madlib punchline (PG-13 sharp, not PG-13 yikes)
+  "racism", "racist", "slavery", "slave", "holocaust", "nazi", "nazis", "genocide", "rape",
+  "incest", "suicide", "pedophile", "molestation", "abortion", "terrorism", "terrorist", "lynching",
 ]);
 
 export function lexPick(rng: Rng, content: Content, genre: string | undefined, anchor: string | undefined, exclude: Set<string>): string | undefined {

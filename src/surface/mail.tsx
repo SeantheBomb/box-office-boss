@@ -114,7 +114,7 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
           </>
         )}
       </div>
-      {(email.ctx.linkPeople?.length || email.ctx.linkMovies?.length) ? (
+      {(email.ctx.linkPeople?.length || email.ctx.linkMovies?.length || email.ctx.linkVfx?.length) ? (
         <div class="meta" style={{ marginTop: 2 }}>
           Referenced:{" "}
           {(email.ctx.linkPeople ?? []).map((pid: string) => {
@@ -127,6 +127,12 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
             const m = sim.movie(mid);
             return m ? (
               <a key={mid} class="doss-link" style={{ marginRight: 8 }} onClick={() => openDossier("movie", mid)}>🎞 {m.title}</a>
+            ) : null;
+          })}
+          {(email.ctx.linkVfx ?? []).map((vid: string) => {
+            const v = sim.state.vfxStudios.find((x) => x.id === vid);
+            return v ? (
+              <a key={vid} class="doss-link" style={{ marginRight: 8 }} onClick={() => openDossier("vfx", vid)}>🎇 {v.name}</a>
             ) : null;
           })}
         </div>

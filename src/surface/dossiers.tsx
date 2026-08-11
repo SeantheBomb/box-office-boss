@@ -8,7 +8,8 @@ import { money } from "../kernel/text";
 import { Portrait2 } from "./portraits2";
 import { FunnelReport } from "./reports";
 
-export type OpenDossier = (kind: "movie" | "person", id: string) => void;
+export type DossierKind = "movie" | "person" | "studio" | "vfx";
+export type OpenDossier = (kind: DossierKind, id: string) => void;
 
 export function PersonLink({ sim, id, openDossier }: { sim: Sim; id?: string; openDossier: OpenDossier }) {
   const p = sim.person(id);
@@ -255,7 +256,20 @@ export function PersonDossier({ sim, personId, openDossier, bump }: { sim: Sim; 
               <tr><td>Revenue</td><td>×{(p.avgProdRevenue ?? 1).toFixed(2)}</td></tr>
               <tr><td>Craft</td><td>{p.avgRating}/100</td></tr>
               <tr><td>Load</td><td>{sim.producerLoad(p.id)} active project{sim.producerLoad(p.id) === 1 ? "" : "s"} (ideal ≤ {sim.content.economy.producers.idealLoad})</td></tr>
-              <tr><td>Employer</td><td>{p.signedByStudio === 0 ? "YOUR studio" : "freelance"}</td></tr>
+              <tr>
+                <td>Employer</td>
+                <td>
+                  {p.signedByStudio === undefined ? "freelance" : (
+                    <a class="doss-link" onClick={() => openDossier("studio", String(p.signedByStudio))}>
+                      {p.signedByStudio === 0 ? `${sim.state.studios[0].name} (YOU)` : sim.state.studios[p.signedByStudio]?.name}
+                    </a>
+                  )}
+                </td>
+              </tr>
+              {p.weeklyRate !== undefined && <tr><td>Rate</td><td>{money(p.weeklyRate)}/wk</td></tr>}
+              {p.morale !== undefined && (
+                <tr><td>Morale</td><td>{Math.round(p.morale)}/100 — {p.morale > 70 ? "thriving" : p.morale > 45 ? "fine, allegedly" : p.morale > 25 ? "taking lunches" : "one bad Tuesday from walking"}</td></tr>
+              )}
             </>
           )}
           {p.role === "critic" && (
@@ -278,6 +292,17 @@ export function PersonDossier({ sim, personId, openDossier, bump }: { sim: Sim; 
             }}
           >
             🍽 Take {p.name.split(" ")[0]} to lunch (books a calendar slot — relationships are played, not wished for)
+          </button>
+        )}
+        {p.role === "producer" && (p.signedByStudio ?? 0) > 0 && bump && (
+          <button
+            class="doss-action"
+            onClick={() => {
+              alert(sim.attemptPoach(p.id));
+              bump();
+            }}
+          >
+            🕶 Make a run at {p.name.split(" ")[0]} ({money(Math.round(sim.content.economy.producers.hireCost * (sim.content.economy.producerStaff?.poachCostFactor ?? 1.5)))} signing bonus — unhappy people say yes)
           </button>
         )}
       </section>
@@ -322,6 +347,125 @@ export function PersonDossier({ sim, personId, openDossier, bump }: { sim: Sim; 
                 <td>YR {f.year}</td>
                 <td>{f.stars.toFixed(1)}★</td>
                 <td style={{ color: f.profit >= 0 ? "#3f6d3a" : "#a33327" }}>{f.profit >= 0 ? "hit" : "flop"}</td>
+              </tr>
+            ))}
+          </table>
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** Studio dossier: the file on a whole shingle — yours or theirs. */
+export function StudioDossier({ sim, studioIndex, openDossier }: { sim: Sim; studioIndex: number; openDossier: OpenDossier }) {
+  const s = sim.state.studios[studioIndex];
+  if (!s) return <div class="doss">No such shingle on this lot.</div>;
+  const slate = sim.state.movies.filter((m) => m.studio === studioIndex && !["done", "cancelled"].includes(m.phase));
+  const released = sim.state.movies.filter((m) => m.studio === studioIndex && m.releaseDay !== undefined).slice(-8).reverse();
+  const staff = sim.state.people.filter((p) => p.role === "producer" && p.signedByStudio === studioIndex);
+  const signed = sim.state.people.filter((p) => (p.role === "cast" || p.role === "director") && p.signedByStudio === studioIndex);
+  const reported = s.totalRevenue - s.reportedSpend;
+  return (
+    <div class="doss">
+      <h3>
+        {s.name} <span class="doss-phase">{s.isPlayer ? "YOUR STUDIO" : s.bankrupt ? "BANKRUPT" : "RIVAL"}</span>
+      </h3>
+      <section>
+        <h4>The Shingle</h4>
+        <table>
+          {s.persona && <tr><td>Reputation</td><td>{s.persona} operation{s.riskAppetite !== undefined ? ` · risk appetite ${Math.round(s.riskAppetite * 100)}/100` : ""}</td></tr>}
+          {s.isPlayer && <tr><td>Cash</td><td>{money(s.cash)}</td></tr>}
+          <tr><td>Reported profit</td><td style={{ color: reported >= 0 ? "#3f6d3a" : "#a33327" }}>{money(reported)}</td></tr>
+          <tr><td>Active slate</td><td>{slate.length} picture{slate.length === 1 ? "" : "s"}</td></tr>
+        </table>
+      </section>
+      {staff.length > 0 && (
+        <section>
+          <h4>Producer Bench</h4>
+          <table>
+            {staff.map((p) => (
+              <tr key={p.id}>
+                <td><PersonLink sim={sim} id={p.id} openDossier={openDossier} /></td>
+                <td>{sim.producerLoad(p.id)} active · craft {p.avgRating}/100{!s.isPlayer && p.morale !== undefined && p.morale < 45 ? " · 👀 restless" : ""}</td>
+              </tr>
+            ))}
+          </table>
+          {!s.isPlayer && !s.bankrupt && <p style={{ fontSize: 11, color: "#666" }}>Open a producer's file to make a run at them.</p>}
+        </section>
+      )}
+      {slate.length > 0 && (
+        <section>
+          <h4>In the Works</h4>
+          <table>
+            {slate.map((m) => (
+              <tr key={m.id}>
+                <td><MovieLink sim={sim} id={m.id} openDossier={openDossier} /></td>
+                <td>{m.phase}{m.announcedRelease !== undefined && m.releaseDay === undefined ? ` · dated WK ${calDate(m.announcedRelease).week}` : ""}</td>
+              </tr>
+            ))}
+          </table>
+        </section>
+      )}
+      {signed.length > 0 && (
+        <section>
+          <h4>Talent Under Contract</h4>
+          <table>
+            {signed.slice(0, 8).map((p) => (
+              <tr key={p.id}>
+                <td><PersonLink sim={sim} id={p.id} openDossier={openDossier} /></td>
+                <td>{p.role} · committed until day {p.busyUntil}</td>
+              </tr>
+            ))}
+          </table>
+        </section>
+      )}
+      {released.length > 0 && (
+        <section>
+          <h4>Track Record</h4>
+          <table>
+            {released.map((m) => (
+              <tr key={m.id}>
+                <td><MovieLink sim={sim} id={m.id} openDossier={openDossier} /></td>
+                <td>YR {calDate(m.releaseDay!).year}</td>
+                <td style={{ color: m.revenue - m.budget >= 0 ? "#3f6d3a" : "#a33327" }}>{money(m.revenue - m.budget)}</td>
+              </tr>
+            ))}
+          </table>
+        </section>
+      )}
+    </div>
+  );
+}
+
+/** VFX house dossier: rate card, capacity, and what their reel actually looks like. */
+export function VfxDossier({ sim, vfxId, openDossier }: { sim: Sim; vfxId: string; openDossier: OpenDossier }) {
+  const v = sim.state.vfxStudios.find((x) => x.id === vfxId);
+  if (!v) return <div class="doss">This shop has dissolved, possibly literally.</div>;
+  const work = sim.state.movies.filter((m) => m.vfxStudioId === v.id).slice(-8).reverse();
+  const active = work.filter((m) => !["done", "cancelled"].includes(m.phase));
+  return (
+    <div class="doss">
+      <h3>
+        {v.name} <span class="doss-phase">VFX HOUSE</span>
+      </h3>
+      <section>
+        <h4>Rate Card</h4>
+        <table>
+          <tr><td>Day rate</td><td>{money(v.dailyCost)}/day</td></tr>
+          <tr><td>Throughput</td><td>~{v.maxDailyShots} shots/day</td></tr>
+          <tr><td>Quality rep</td><td>{v.avgRating}/100 — {v.avgRating > 75 ? "the trailer shop" : v.avgRating > 55 ? "solid, unshowy" : v.avgRating > 40 ? "you get what you pay for" : "renders arrive damp"}</td></tr>
+          <tr><td>Currently on</td><td>{active.length ? active.length + " picture" + (active.length === 1 ? "" : "s") : "taking calls"}</td></tr>
+        </table>
+      </section>
+      {work.length > 0 && (
+        <section>
+          <h4>The Reel</h4>
+          <table>
+            {work.map((m) => (
+              <tr key={m.id}>
+                <td><MovieLink sim={sim} id={m.id} openDossier={openDossier} /></td>
+                <td>{m.phase}{m.quality.vfx ? ` · vfx ${Math.round(m.quality.vfx)}/100` : ""}</td>
+                <td>{sim.state.studios[m.studio]?.name}</td>
               </tr>
             ))}
           </table>

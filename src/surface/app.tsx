@@ -78,9 +78,14 @@ export function App({ content }: { content: Content }) {
     setTimeout(() => setBouncing((b) => { const n = new Set(b); n.delete(app); return n; }), 2400);
   };
 
-  const openDossier = (kind: "movie" | "person", id: string) => {
+  const openDossier = (kind: "movie" | "person" | "studio" | "vfx", id: string) => {
     // every entity link in the game lands in THE Dossier — one app, searchable, with a back-trail
-    const name = kind === "movie" ? simRef.current?.movie(id)?.title : simRef.current?.person(id)?.name;
+    const s = simRef.current;
+    const name =
+      kind === "movie" ? s?.movie(id)?.title :
+      kind === "person" ? s?.person(id)?.name :
+      kind === "studio" ? s?.state.studios[Number(id)]?.name :
+      s?.state.vfxStudios.find((v) => v.id === id)?.name;
     audio.sfx("window_open", 0.7);
     wm.open("dossier", `🗂 ${name ?? "The Dossier"}`, { id: "dossier", props: { kind, id }, w: 520, h: 540 });
   };

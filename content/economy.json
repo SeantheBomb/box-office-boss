@@ -1,7 +1,11 @@
 {
   "startingCash": 60000000,
   "startingPatience": 70,
-  "patienceTiers": [55, 35, 15],
+  "patienceTiers": [
+    55,
+    35,
+    15
+  ],
   "quarterlyExpectationBase": 6000000,
   "quarterlyExpectationGrowth": 1.15,
   "patienceQuarterHit": 10,
@@ -10,9 +14,15 @@
   "patienceAwardReward": 8,
   "overheadDaily": 25000,
   "phases": {
-    "scriptDays": [21, 42],
+    "scriptDays": [
+      21,
+      42
+    ],
     "scriptCostFactor": 0.02,
-    "preproDays": [21, 42],
+    "preproDays": [
+      21,
+      42
+    ],
     "preproCostFactor": 0.08,
     "greenlightScriptFactor": 0.015,
     "greenlightPreproFactor": 0.03,
@@ -30,9 +40,24 @@
     "reshootDays": 7,
     "reshootCostFactor": 0.04,
     "marketingTiers": [
-      { "id": "quiet", "label": "Quiet release", "cost": 500000, "reach": 0.25 },
-      { "id": "standard", "label": "Standard campaign", "cost": 3000000, "reach": 0.55 },
-      { "id": "blitz", "label": "Full blitz", "cost": 9000000, "reach": 0.85 }
+      {
+        "id": "quiet",
+        "label": "Quiet release",
+        "cost": 500000,
+        "reach": 0.25
+      },
+      {
+        "id": "standard",
+        "label": "Standard campaign",
+        "cost": 3000000,
+        "reach": 0.55
+      },
+      {
+        "id": "blitz",
+        "label": "Full blitz",
+        "cost": 9000000,
+        "reach": 0.85
+      }
     ]
   },
   "release": {
@@ -41,9 +66,21 @@
     "studioCut": 0.55,
     "theatersMax": 4200,
     "theatricalWeeks": 6,
-    "decay": [1.0, 0.55, 0.34, 0.22, 0.14, 0.08],
+    "decay": [
+      1.0,
+      0.55,
+      0.34,
+      0.22,
+      0.14,
+      0.08
+    ],
     "competitionSplit": 0.35,
-    "seasonMods": { "Winter": 0.85, "Spring": 1.0, "Summer": 1.25, "Fall": 1.0 },
+    "seasonMods": {
+      "Winter": 0.85,
+      "Spring": 1.0,
+      "Summer": 1.25,
+      "Fall": 1.0
+    },
     "fallCriticBonus": 0.15
   },
   "distribute": {
@@ -51,17 +88,40 @@
     "unitPriceWholesale": 10,
     "unitPriceRetail": 18,
     "priceTiers": [
-      { "id": "premium", "label": "Premium pricing", "mult": 1.4, "volumeMult": 0.6 },
-      { "id": "standard", "label": "Standard pricing", "mult": 1.0, "volumeMult": 1.0 },
-      { "id": "bargain", "label": "Bargain bin blitz", "mult": 0.6, "volumeMult": 1.6 }
+      {
+        "id": "premium",
+        "label": "Premium pricing",
+        "mult": 1.4,
+        "volumeMult": 0.6
+      },
+      {
+        "id": "standard",
+        "label": "Standard pricing",
+        "mult": 1.0,
+        "volumeMult": 1.0
+      },
+      {
+        "id": "bargain",
+        "label": "Bargain bin blitz",
+        "mult": 0.6,
+        "volumeMult": 1.6
+      }
     ]
   },
   "awards": {
     "cashPrize": 4000000,
     "week": 44,
-    "categories": ["Best Picture", "Best Director", "Best Performance", "Best Stunt Ensemble", "Best Visual Effects"]
+    "categories": [
+      "Best Picture",
+      "Best Director",
+      "Best Performance",
+      "Best Stunt Ensemble",
+      "Best Visual Effects"
+    ]
   },
-  "convention": { "week": 30 },
+  "convention": {
+    "week": 30
+  },
   "rivals": {
     "maxConcurrent": 3,
     "greenlightCheckDays": 14,
@@ -76,18 +136,147 @@
     "idealLoad": 2,
     "overloadPenaltyPerExtra": 0.18,
     "hireCost": 2000000,
-    "hireOfferIntervalDays": [35, 70]
+    "hireOfferIntervalDays": [
+      35,
+      70
+    ]
   },
-  "writers": { "pitchIntervalDays": [20, 45] },
-  "sequel": { "minProfit": 5000000, "fanScoreMin": 55 },
-  "preseed": { "warmupDays": 56, "handoffCashFloor": 35000000, "rivalLegacyMovies": 3 },
-  "prepro": { "dailyCostFactor": 0.001 },
-  "pressTour": { "cost": 1500000, "hype": 12, "relationshipHit": 6, "maxPerMovie": 2 },
-  "testScreening": { "cost": 500000, "leakChance": 0.2, "leakHypeHit": 8 },
-  "triage": { "screeningThreshold": 45, "reshootCostFactor": 0.06, "reshootQuality": 10, "reshootDelayDays": 21, "recutCostFactor": 0.015, "recutQuality": 4, "selloffFactor": 0.55 },
-  "festival": { "week": 8, "films": 3, "priceRange": [4000000, 14000000], "qualityRange": [45, 92] },
-  "corridor": { "flinchChance": 0.35, "flinchDays": 14, "collisionWindow": 7 },
-  "regret": { "adoptChance": 0.45, "recapWeek": 47 },
-  "agents": { "count": 6, "packageChance": 0.35, "packageDiscount": 0.8 },
-  "revenueEstimate": { "genreMultiplier": { "Action": 2.6, "Comedy": 2.9, "Horror": 3.6, "Drama": 2.2, "Sci-Fi": 2.5, "Thriller": 2.6, "Family": 2.8, "Western": 1.9 } }
+  "writers": {
+    "pitchIntervalDays": [
+      20,
+      45
+    ]
+  },
+  "sequel": {
+    "minProfit": 5000000,
+    "fanScoreMin": 55
+  },
+  "preseed": {
+    "warmupDays": 56,
+    "handoffCashFloor": 35000000,
+    "rivalLegacyMovies": 3
+  },
+  "prepro": {
+    "dailyCostFactor": 0.001
+  },
+  "pressTour": {
+    "cost": 1500000,
+    "hype": 12,
+    "relationshipHit": 6,
+    "maxPerMovie": 2
+  },
+  "testScreening": {
+    "cost": 500000,
+    "leakChance": 0.2,
+    "leakHypeHit": 8
+  },
+  "triage": {
+    "screeningThreshold": 45,
+    "reshootCostFactor": 0.06,
+    "reshootQuality": 10,
+    "reshootDelayDays": 21,
+    "recutCostFactor": 0.015,
+    "recutQuality": 4,
+    "selloffFactor": 0.55
+  },
+  "festival": {
+    "week": 8,
+    "films": 3,
+    "priceRange": [
+      4000000,
+      14000000
+    ],
+    "qualityRange": [
+      45,
+      92
+    ]
+  },
+  "corridor": {
+    "flinchChance": 0.35,
+    "flinchDays": 14,
+    "collisionWindow": 7
+  },
+  "regret": {
+    "adoptChance": 0.45,
+    "recapWeek": 47
+  },
+  "agents": {
+    "count": 6,
+    "packageChance": 0.35,
+    "packageDiscount": 0.8
+  },
+  "revenueEstimate": {
+    "genreMultiplier": {
+      "Action": 2.6,
+      "Comedy": 2.9,
+      "Horror": 3.6,
+      "Drama": 2.2,
+      "Sci-Fi": 2.5,
+      "Thriller": 2.6,
+      "Family": 2.8,
+      "Western": 1.9
+    }
+  },
+  "careers": {
+    "smashProfit": 40000000,
+    "hitProfit": 12000000,
+    "bombLoss": -15000000,
+    "fame": {
+      "smash": 12,
+      "hit": 7,
+      "ok": 1,
+      "flop": -6,
+      "bomb": -13
+    },
+    "wreckSetbacks": 3,
+    "wreckFame": 6,
+    "rateFloor": 2000,
+    "rateCeil": 160000,
+    "rateCurve": 1.8,
+    "rateChase": 0.5,
+    "egoCoopDrop": 10,
+    "humbleCoopGain": 12,
+    "humbleRateCut": 0.65,
+    "craftDrift": 0.25,
+    "producer": {
+      "revenueDelta": {
+        "smash": 0.06,
+        "hit": 0.04,
+        "ok": 0.01,
+        "flop": -0.03,
+        "bomb": -0.06
+      },
+      "lengthSetback": 0.03,
+      "lengthClean": -0.02,
+      "costOverrun": 0.03,
+      "costClean": -0.015,
+      "moraleHit": 8,
+      "moraleFlop": -5
+    },
+    "vfx": {
+      "drift": 0.3,
+      "demandStep": 1000,
+      "costFloor": 2000,
+      "costCeil": 30000
+    }
+  },
+  "producerStaff": {
+    "rivalRoster": 2,
+    "weeklyRateBase": 40000,
+    "moraleStart": 60,
+    "overloadMoralePerWeek": 2,
+    "idleMoralePerWeek": 1,
+    "raiseMoraleAccept": 10,
+    "raiseMoraleHardball": 6,
+    "raiseMoraleRefuse": 14,
+    "poachThreshold": 45,
+    "poachChancePerWeek": 0.12,
+    "poachCostFactor": 1.5,
+    "counterRaiseFactor": 1.3,
+    "askFactorRange": [
+      1.08,
+      1.25
+    ],
+    "maxMarketMultiple": 1.5
+  }
 }

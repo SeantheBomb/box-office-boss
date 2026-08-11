@@ -1,13 +1,12 @@
 // Bump BUILD_VERSION every deploy; players get a studio-memo popup with the changelog.
 // SAVE_VERSION lives in kernel/save.ts — when it bumps, the popup explains the save reset.
 
-export const BUILD_VERSION = "0.6.0";
+export const BUILD_VERSION = "0.7.0";
 
 export const CHANGELOG: string[] = [
-  "BOOM OR BUST: movies are now a GENRE × GENRE × TOPIC fusion (Horror × Comedy · ZOMBIES). Topics trend on their own — spikier and meaner than genres — and when all three line up hot, the multiplier goes EXPONENTIAL. When they don't… well. The Audience app has a new Topic Tracker board.",
-  "THE DOSSIER: one searchable app for every file in the game. Search anyone or anything — people, pictures, genres, topics — and every 📁 link in every email and meeting now opens straight to the file, with a back button to retrace the trail.",
-  "CROSS-REFERENCE EVERYTHING: producer stat sheets right in the assignment email, rival releases linked from the pick-a-date email, and a Referenced: row of one-click files on the mail that matters.",
-  "STANDUP WITH TEETH: idle producers can now be handed a shelved project, sent out to SCOUT a pitch for next week (they come back with dinner — and the meeting starts warm), or fired on the spot (severance applies; the room notices).",
-  "SET VISITS THAT MATTER: production reviews now read the ACTUAL state of the shoot — real friction, real overruns, real scope creep. And when nothing's on fire, a healthy set is leverage: praise the room, push the pace, or commission a showpiece scene.",
-  "NO MORE DOPPELGÄNGERS: duplicate movie titles and twin VFX studios have been escorted off the lot.",
+  "CAREERS: every release now moves everyone attached to it. Stars gain and lose fame, rates chase the fame curve, directors' and writers' craft drifts toward what they actually delivered, producers' track records become EARNED, and VFX houses reprice with demand.",
+  "RISING STARS & FALLING ONES: break out onto the A-list and the ego arrives before the trophy — new riders, worse cooperation, a heavier rate card. Wreck a project or star in a bomb and they come back down to earth: cheap, early, and suspiciously polite. You'll feel it in the room.",
+  "THE PRODUCER ECONOMY: producers draw real weekly salaries, carry morale, and renegotiate their rate every season. Rival studios run fully simulated producer benches — and unhappy people take calls in BOTH directions. Counter the poach or let them walk; make your own runs from any rival producer's file.",
+  "THE TRADES KNOW EVERYTHING: breakouts, falls from grace, defections, failed raids, and repriced VFX shops all make the column — with one-click files on everyone named.",
+  "THE DOSSIER, PROPERLY: a real dock icon, browse tabs for People / Pictures / Studios / VFX, full search across all of it (writers, directors, rival movies included), and brand-new files on every studio and every VFX house.",
 ];

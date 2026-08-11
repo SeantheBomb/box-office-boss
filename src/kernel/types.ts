@@ -84,6 +84,10 @@ export interface Person {
   busyUntil: number; // day; talent locked to a production until then
   signedByStudio?: number; // studio index currently employing
   agentId?: string; // cast & directors are repped
+  // careers (P7)
+  morale?: number; // 0..100 — producers only; low morale = poachable
+  weeklyRate?: number; // producer salary, renegotiated seasonally
+  careerTurn?: { kind: "breakout" | "humbled"; day: number }; // recent arc turn, colors greetings
   // P5 writing systems
   voice?: Voice; // minted lazily — every person keeps one voice forever
   memories?: Memory[]; // what they remember about YOU

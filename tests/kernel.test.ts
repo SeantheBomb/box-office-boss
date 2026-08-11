@@ -203,3 +203,26 @@ describe("email composer", () => {
     }
   });
 });
+
+describe("P7 careers", () => {
+  it("releases move the town: stats drift, rival studios keep producer benches", () => {
+    const sim = newSeededRun(content, 2031);
+    const ratesBefore = new Map(sim.state.people.filter((p) => p.role === "cast").map((p) => [p.id, p.dailyRate]));
+    const prodBefore = new Map(sim.state.people.filter((p) => p.role === "producer").map((p) => [p.id, p.avgProdRevenue]));
+    autoplay(sim, { days: DAYS_PER_YEAR * 2, emailPolicy: disciplinedEmailPolicy(3), meetingPolicy: disciplinedMeetingPolicy(3) });
+    // somebody's rate moved — careers are not frozen
+    const rateMoved = sim.state.people.some((p) => p.role === "cast" && ratesBefore.get(p.id) !== undefined && p.dailyRate !== ratesBefore.get(p.id));
+    expect(rateMoved).toBe(true);
+    // producer track records are earned, not minted
+    const prodMoved = sim.state.people.some((p) => p.role === "producer" && prodBefore.get(p.id) !== undefined && p.avgProdRevenue !== prodBefore.get(p.id));
+    expect(prodMoved).toBe(true);
+    // rivals run real producer staffs
+    const rivalStaffed = sim.state.studios.some((s, i) => i > 0 && !s.bankrupt && sim.state.people.some((p) => p.role === "producer" && p.signedByStudio === i));
+    expect(rivalStaffed).toBe(true);
+    // player staff carries morale + a weekly rate once the economy is live
+    for (const p of sim.staffProducers()) {
+      expect(p.morale).toBeDefined();
+      expect(p.weeklyRate).toBeGreaterThan(0);
+    }
+  });
+});

@@ -22,8 +22,9 @@ import {
   SEASONS,
   WEEKS_PER_SEASON,
 } from "./types";
-import { mintWorld } from "./people";
+import { mintWorld, mintPerson, mintName } from "./people";
 import { mintPitch, mintSequelPitch, mintTitle, type PitchData } from "./pitchgen";
+import { applyCareerOutcomes, outcomeTier, producerAskRate, type CareerNews } from "./careers";
 import { computeFunnel, discover, initAudience, weeklyFadTick, movieHeat, type FunnelResult } from "./audience";
 import { bankLine, fill, money, count, selectLine } from "./text";
 import { mintVoice, voiceWrap, callbackLine, remember } from "./voice";
@@ -305,7 +306,10 @@ export class Sim {
 
     const d = calDate(st.day);
     if (d.dayOfWeek === 0) this.weeklyTick();
-    if (d.dayOfWeek === 0 && d.weekOfSeason === 1 && st.day > DAYS_PER_WEEK) this.quarterlyBoard();
+    if (d.dayOfWeek === 0 && d.weekOfSeason === 1 && st.day > DAYS_PER_WEEK) {
+      this.quarterlyBoard();
+      this.seasonalRateTalks();
+    }
 
     // fail states
     if (this.player.cash <= 0 && !st.gameOver) {
@@ -344,6 +348,7 @@ export class Sim {
     for (const s of st.studios) s.history.push({ week, profit: s.totalRevenue - s.reportedSpend });
     this.standingsEmail();
     this.rivalBankruptcyCheck();
+    this.producerStaffTick();
     this.maybeGossipColumn();
     this.scheduleAnnualEvents();
     this.scheduleStandups();
@@ -1173,12 +1178,55 @@ This column is never wrong. This column has been wrong twice this month.
     const credit = (p: Person | undefined, role: any) => {
       if (!p) return;
       p.filmography.push({ movieId: m.id, title: m.title, role, year, stars, profit });
-      if (p.fame !== undefined) p.fame = Math.min(100, p.fame + (stars > 3.5 ? 6 : stars < 2 ? -4 : 1));
     };
     credit(this.person(m.writerId), "writer");
     credit(this.person(m.directorId), "director");
     for (const c of m.castIds) credit(this.person(c), "cast");
     credit(this.person(m.producerId), "producer");
+    // P7: the picture is closed — everyone attached wears the outcome
+    const news = applyCareerOutcomes(this.content, this.state, this.rng.get("careers"), m);
+    this.careerNewsEmails(m, news);
+  }
+
+  /** Notable career turns make the trades. Cap the column inches per picture. */
+  private careerNewsEmails(m: Movie, news: CareerNews[]) {
+    const tier = outcomeTier(this.content, m);
+    const cols = this.columnists();
+    for (const n of news.slice(0, 2)) {
+      const bank =
+        n.kind === "breakout" ? "career-breakout" :
+        n.kind === "humbled" ? "career-humbled" :
+        n.kind === "wrecked" ? "career-wrecked" :
+        n.kind === "range" ? "career-range" :
+        n.kind === "vfxHot" ? "vfx-hot-news" : "vfx-cold-news";
+      const p = this.person(n.personId);
+      this.pushEmail({
+        from: `${cols.news}, Varietal Trade Daily`,
+        fromRole: "trade",
+        format: "clipping",
+        subject: this.line(bank + "-subject", { name: n.name, title: m.title }),
+        body:
+          this.line(bank, { name: n.name, title: m.title, rate: p?.dailyRate ? money(p.dailyRate) : "" }) +
+          (p?.dailyRate ? `\nQuote sheet: ${money(p.dailyRate)}/day${p.cooperation !== undefined ? ` · cooperation ${p.cooperation}/100` : ""}.` : ""),
+        actions: [],
+        ctx: { movieId: m.id, ...(n.personId ? { linkPeople: [n.personId] } : {}), ...(n.vfxId ? { linkVfx: [n.vfxId] } : {}) },
+      });
+    }
+    // your own producer's take lands in the same stack
+    if (m.studio === 0 && m.producerId && (tier === "smash" || tier === "bomb")) {
+      const pr = this.person(m.producerId);
+      if (pr) {
+        this.pushEmail({
+          from: pr.name,
+          fromRole: "producer",
+          format: "note",
+          subject: tier === "smash" ? `${m.title}. We did that.` : `${m.title}. We don't talk about it.`,
+          body: this.line(tier === "smash" ? "producer-smash-note" : "producer-bomb-note", { title: m.title, name: pr.name }),
+          actions: [],
+          ctx: { movieId: m.id, linkPeople: [pr.id] },
+        });
+      }
+    }
   }
 
   private maybeSequel(m: Movie) {
@@ -1469,7 +1517,59 @@ This column is never wrong. This column has been wrong twice this month.
       if (producer && producer.signedByStudio === undefined) {
         this.spend(0, this.content.economy.producers.hireCost);
         producer.signedByStudio = 0;
+        producer.morale = this.content.economy.producerStaff?.moraleStart ?? 60;
+        producer.weeklyRate = producerAskRate(this.content, producer);
         this.notifyParkedMovies(`${producer.name} has joined the studio.`);
+      }
+    } else if (actionId.startsWith("producerRaise_")) {
+      const p = this.person(actionId.slice("producerRaise_".length));
+      const S = this.content.economy.producerStaff;
+      if (p) {
+        p.weeklyRate = em.ctx.ask;
+        p.morale = Math.min(100, (p.morale ?? 60) + S.raiseMoraleAccept);
+        p.relationship += 6;
+        this.rep("paysWell", 1);
+        remember(p, this.state.day, "you paid the raise without haggling", 6);
+      }
+    } else if (actionId.startsWith("producerHold_")) {
+      const p = this.person(actionId.slice("producerHold_".length));
+      const S = this.content.economy.producerStaff;
+      if (p) {
+        const sticks = (p.morale ?? 60) > 55;
+        p.morale = Math.max(0, (p.morale ?? 60) - (sticks ? S.raiseMoraleHardball : S.raiseMoraleRefuse));
+        p.relationship -= sticks ? 3 : 8;
+        this.rep("paysWell", -1);
+        if (!sticks) remember(p, this.state.day, "you held the line on their raise while they were already unhappy", -8);
+      }
+    } else if (actionId.startsWith("producerCounter_")) {
+      const p = this.person(actionId.slice("producerCounter_".length));
+      if (p) {
+        p.weeklyRate = em.ctx.offer;
+        p.morale = Math.min(100, (p.morale ?? 60) + 12);
+        p.relationship += 8;
+        this.rep("paysWell", 2);
+        delete this.state.flags[`poachOffer_${p.id}`];
+        remember(p, this.state.day, "you matched the poach offer on the spot", 8);
+      }
+    } else if (actionId.startsWith("producerRelease_")) {
+      const p = this.person(actionId.slice("producerRelease_".length));
+      if (p) {
+        p.signedByStudio = em.ctx.rivalIndex;
+        p.morale = this.content.economy.producerStaff?.moraleStart ?? 60;
+        p.weeklyRate = em.ctx.offer;
+        delete this.state.flags[`poachOffer_${p.id}`];
+        this.staffMoraleShock(-3);
+        this.rep("loyalty", -2);
+        const rival = this.state.studios[em.ctx.rivalIndex];
+        this.pushEmail({
+          from: `${this.columnists().news}, Varietal Trade Daily`,
+          fromRole: "trade",
+          format: "clipping",
+          subject: `${p.name} jumps to ${rival?.name ?? "a rival"}`,
+          body: this.line("producer-walked", { name: p.name, rival: rival?.name ?? "a rival" }) + `\nActive projects wrap under the old deal first. The bench noticed.`,
+          actions: [],
+          ctx: { linkPeople: [p.id] },
+        });
       }
     } else if (actionId === "approveProduction" && m) {
       const cost = Math.round(m.budget * E.greenlightProductionFactor);
@@ -1724,6 +1824,161 @@ This column is never wrong. This column has been wrong twice this month.
     }
     const iv = this.content.economy.producers.hireOfferIntervalDays;
     this.addEvent(this.weekday(this.state.day + this.rng.get("schedule").int(iv[0], iv[1])), "morning", "outcome", "producerOffer", {});
+  }
+
+  // ---------- P7: the producer economy ----------
+  /** Weekly: rivals staff up, everyone gets paid, morale drifts, unhappy people take calls. */
+  private producerStaffTick() {
+    const S = this.content.economy.producerStaff;
+    if (!S) return;
+    const rng = this.rng.get("careers");
+    // rivals keep a real bench (lazy — also upgrades older saves in place)
+    for (let si = 1; si < this.state.studios.length; si++) {
+      const s = this.state.studios[si];
+      if (s.bankrupt) continue;
+      const staff = this.state.people.filter((p) => p.role === "producer" && p.signedByStudio === si);
+      if (staff.length < S.rivalRoster) {
+        const free = this.state.people
+          .filter((p) => p.role === "producer" && p.signedByStudio === undefined)
+          .sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
+        let hire = free[0];
+        if (!hire) {
+          hire = mintPerson(rng, this.content, "producer");
+          const used = new Set(this.state.people.map((p) => p.name));
+          for (let t = 0; t < 12 && used.has(hire.name); t++) hire.name = mintName(rng, this.content.people.nameBanks, hire.gender, (this.content as any).inspiration);
+          this.state.people.push(hire);
+        }
+        hire.signedByStudio = si;
+        hire.morale = S.moraleStart;
+        hire.weeklyRate = producerAskRate(this.content, hire);
+      }
+    }
+    // payroll + morale, every signed producer in town
+    for (const p of this.state.people) {
+      if (p.role !== "producer" || p.signedByStudio === undefined) continue;
+      const morale = p.morale ?? S.moraleStart;
+      p.weeklyRate ??= producerAskRate(this.content, p);
+      this.spend(p.signedByStudio, p.weeklyRate);
+      const load = this.producerLoad(p.id);
+      if (load > this.content.economy.producers.idealLoad) p.morale = Math.max(0, morale - S.overloadMoralePerWeek);
+      else if (load === 0 && p.signedByStudio === 0) p.morale = Math.max(0, morale - S.idleMoralePerWeek);
+      else p.morale = Math.min(100, morale + 0.5);
+      // a studio bleeding cash is a bad place to work
+      if (p.signedByStudio > 0 && this.state.studios[p.signedByStudio]?.cash < 0) p.morale = Math.max(0, p.morale! - 2);
+    }
+    // rivals come sniffing around your unhappy people
+    const rivals = this.state.studios.map((s, i) => ({ s, i })).filter((x) => x.i > 0 && !x.s.bankrupt);
+    if (!rivals.length) return;
+    for (const p of this.staffProducers()) {
+      if ((p.morale ?? 60) >= S.poachThreshold || this.state.flags[`poachOffer_${p.id}`]) continue;
+      if (!rng.chance(S.poachChancePerWeek)) continue;
+      const rival = rng.pick(rivals);
+      const offer = Math.round(((p.weeklyRate ?? S.weeklyRateBase) * S.counterRaiseFactor) / 1000) * 1000;
+      this.state.flags[`poachOffer_${p.id}`] = true;
+      this.pushEmail({
+        from: `${this.columnists().gossip}, The Whisper Column`,
+        fromRole: "trade",
+        format: "clipping",
+        subject: this.line("producer-poach-warning-subject", { name: p.name }),
+        body:
+          this.line("producer-poach-warning", { name: p.name, rival: rival.s.name }) +
+          `\nTheir current rate: ${money(p.weeklyRate ?? 0)}/wk. The offer on the table: ${money(offer)}/wk. Morale reads ${Math.round(p.morale ?? 60)}/100.`,
+        actions: [
+          { id: `producerCounter_${p.id}`, label: `Match it (${money(offer)}/wk — they stay, they remember)` },
+          { id: `producerRelease_${p.id}`, label: "Let them walk (current projects wrap first)" },
+        ],
+        ctx: { producerId: p.id, rivalIndex: rival.i, offer, linkPeople: [p.id] },
+      });
+    }
+  }
+
+  /** Season boundary: everyone on staff wants a word about their rate. */
+  private seasonalRateTalks() {
+    const S = this.content.economy.producerStaff;
+    if (!S) return;
+    const rng = this.rng.get("careers");
+    for (const p of this.staffProducers()) {
+      p.weeklyRate ??= producerAskRate(this.content, p);
+      const factor = S.askFactorRange[0] + rng.next() * (S.askFactorRange[1] - S.askFactorRange[0]);
+      const market = producerAskRate(this.content, p);
+      // asks track the market, they don't compound forever
+      const ask = Math.round(Math.min(Math.max(p.weeklyRate * factor, market), market * (S.maxMarketMultiple ?? 1.5)) / 1000) * 1000;
+      if (ask <= p.weeklyRate) continue;
+      // last season's unanswered ask expires — silence reads as a no, and they log it
+      const stale = this.state.inbox.find((e) => !e.actionTaken && e.actions.some((a) => a.id === `producerRaise_${p.id}`));
+      if (stale) {
+        stale.actionTaken = "expired";
+        p.morale = Math.max(0, (p.morale ?? 60) - 4);
+      }
+      this.pushEmail({
+        from: p.name,
+        fromRole: "producer",
+        format: "memo",
+        subject: this.line("producer-raise-ask-subject", { name: p.name }),
+        body:
+          this.line("producer-raise-ask", { name: p.name }) +
+          `\nCurrent: ${money(p.weeklyRate)}/wk. The ask: ${money(ask)}/wk.\nTrack record: timelines ×${(p.avgProdLength ?? 1).toFixed(2)} · costs ×${(p.avgProdCost ?? 1).toFixed(2)} · revenue ×${(p.avgProdRevenue ?? 1).toFixed(2)} · craft ${p.avgRating}/100.`,
+        actions: [
+          { id: `producerRaise_${p.id}`, label: `Pay it (${money(ask)}/wk)` },
+          { id: `producerHold_${p.id}`, label: "Hold the line (they won't love it)" },
+        ],
+        ctx: { producerId: p.id, ask, linkPeople: [p.id] },
+      });
+    }
+    // rival staffs quietly reprice to market
+    for (const p of this.state.people) {
+      if (p.role === "producer" && (p.signedByStudio ?? 0) > 0) p.weeklyRate = producerAskRate(this.content, p);
+    }
+  }
+
+  /** Player-initiated raid on a rival's producer. Costs real money either way. */
+  attemptPoach(pid: string): string {
+    const S = this.content.economy.producerStaff;
+    const p = this.person(pid);
+    if (!p || p.role !== "producer" || !p.signedByStudio) return "They don't have a desk you can poach them from.";
+    const rival = this.state.studios[p.signedByStudio];
+    const cost = Math.round(this.content.economy.producers.hireCost * S.poachCostFactor);
+    if (this.player.cash < cost) return `You'd need ${money(cost)} for the signing bonus. You don't have it.`;
+    const rng = this.rng.get("careers");
+    const rep = this.state.reputation!;
+    const chance = Math.max(0.05, Math.min(0.9, 0.25 + (60 - (p.morale ?? 60)) / 100 + (rep.paysWell - 50) / 200 + p.relationship / 200));
+    const cols = this.columnists();
+    if (rng.chance(chance)) {
+      this.spend(0, cost);
+      p.signedByStudio = 0;
+      p.morale = 70;
+      p.weeklyRate = Math.round((producerAskRate(this.content, p) * 1.15) / 1000) * 1000;
+      p.relationship += 10;
+      this.pushEmail({
+        from: `${cols.news}, Varietal Trade Daily`,
+        fromRole: "trade",
+        format: "clipping",
+        subject: this.line("producer-poach-success-subject", { name: p.name, rival: rival.name }),
+        body: this.line("producer-poach-success", { name: p.name, rival: rival.name }) + `\nTerms: ${money(cost)} bonus, ${money(p.weeklyRate)}/wk.`,
+        actions: [],
+        ctx: { linkPeople: [p.id] },
+      });
+      this.notifyParkedMovies(`${p.name} just joined from ${rival.name}.`);
+      return `${p.name} cleaned out their desk at ${rival.name}. Cost you ${money(cost)} — worth every nickel. Probably.`;
+    }
+    this.spend(0, Math.round(cost * 0.2));
+    p.morale = Math.min(100, (p.morale ?? 60) + 5);
+    p.relationship += 3;
+    this.pushEmail({
+      from: `${cols.gossip}, The Whisper Column`,
+      fromRole: "trade",
+      format: "clipping",
+      subject: this.line("producer-poach-fail-subject", { name: p.name }),
+      body: this.line("producer-poach-fail", { name: p.name, rival: rival.name }),
+      actions: [],
+      ctx: { linkPeople: [p.id] },
+    });
+    return `${p.name} heard you out over a very expensive lunch (${money(Math.round(cost * 0.2))}), then stayed put. They seemed flattered, at least.`;
+  }
+
+  /** Firing or losing a colleague rattles the rest of the bench. */
+  staffMoraleShock(delta: number) {
+    for (const p of this.staffProducers()) p.morale = Math.max(0, Math.min(100, (p.morale ?? 60) + delta));
   }
 
   private cancelMovie(m: Movie) {

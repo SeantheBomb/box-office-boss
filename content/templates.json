@@ -524,6 +524,124 @@
       "The air smells of pine and desperation.",
       "Every buyer here has a parka and a checkbook. You have both.",
       "A director just cried on a panel. Bidding doubled."
+    ],
+    "career-breakout-subject": [
+      "{name} has ARRIVED (their words)",
+      "The town has a new favorite: {name}",
+      "{name}, suddenly everywhere",
+      "Overheard: {name} no longer does mornings"
+    ],
+    "career-breakout": [
+      "{name} rode \"{title}\" straight onto the A-list. Their agent has stopped returning small calls. Their rate card has been reprinted on heavier paper.",
+      "After \"{title}\", {name} is officially a Name. They have opinions about lighting now. They have a person whose only job is almonds.",
+      "\"{title}\" made {name} a star, and {name} agrees. Sources say the entourage has an entourage.",
+      "{name} went into \"{title}\" as talent and came out as a Situation. Book them while you can still afford the phone call."
+    ],
+    "career-humbled-subject": [
+      "{name}, available. Very available.",
+      "Whatever happened to {name}?",
+      "{name} is 'between moments'",
+      "The {name} rehabilitation tour begins"
+    ],
+    "career-humbled": [
+      "After \"{title}\", {name} has rediscovered punctuality, gratitude, and answering their own phone. Their new rate reflects their new outlook.",
+      "{name} took the fall for \"{title}\" and landed somewhere humbler. They now describe themselves as 'hungry', which their last three sets would find novel.",
+      "The word on {name} is 'chastened'. They arrive early now. They know the crew's names. The discount is real.",
+      "\"{title}\" brought {name} back down to earth, where the rest of us have parking validation. A bargain, if you believe in second acts."
+    ],
+    "career-wrecked-subject": [
+      "What happened on that set: names named",
+      "The \"{title}\" post-mortem gets personal",
+      "{name} wore it"
+    ],
+    "career-wrecked": [
+      "The \"{title}\" post-mortem is out, and {name}'s name appears in it the way a stain appears on a rug. The town keeps receipts.",
+      "Three crew members, speaking anonymously and in unison, put the \"{title}\" chaos at {name}'s trailer door. Bookers noticed.",
+      "{name} is described in the \"{title}\" wrap report as 'a weather system'. Their quote sheet just got a footnote."
+    ],
+    "career-range-subject": [
+      "{name} can apparently do that too",
+      "The {name} range surprise"
+    ],
+    "career-range": [
+      "\"{title}\" proved {name} has range nobody billed them for. Their agent is already using the word 'versatile' like it's a threat.",
+      "{name} stretched on \"{title}\" and it held. Expect their next pitch in a genre you didn't see coming."
+    ],
+    "vfx-hot-news-subject": [
+      "{name} is booked through next award season",
+      "Everyone wants {name} now"
+    ],
+    "vfx-hot-news": [
+      "After \"{title}\", {name} raised their day rate and their hold times. They are worth it, which is the annoying part.",
+      "{name}'s work on \"{title}\" has every studio in town calling. Their new quote arrives with a waiting list attached."
+    ],
+    "vfx-cold-news-subject": [
+      "{name} would like to discuss their availability",
+      "Rough quarter at {name}"
+    ],
+    "vfx-cold-news": [
+      "The \"{title}\" renders did {name} no favors. Their rate quietly dropped, which is the industry's way of apologizing to itself.",
+      "{name} is offering 'flexible terms' after \"{title}\". Translation: they will work for exposure and electricity."
+    ],
+    "producer-smash-note": [
+      "Framed the opening-weekend number. Hung it where my diploma used to be. Same time next picture.",
+      "I'd like to formally note that I never doubted it, and informally note that I doubted it twice a day.",
+      "The board sent fruit. FRUIT. We made them a fortune and they sent pears. Anyway — what's next?"
+    ],
+    "producer-bomb-note": [
+      "I've removed it from my email signature. I suggest we all do the same. Onward.",
+      "My therapist says we don't use the word 'disaster'. We say 'learning'. That was an expensive learning.",
+      "I have already forgotten the title. If asked, I was on a different lot that year."
+    ],
+    "producer-raise-ask-subject": [
+      "About my number (season's turning)",
+      "New season, new sheet",
+      "My agent made me send this"
+    ],
+    "producer-raise-ask": [
+      "It's rate season, so let's do this like adults: I'm good at this, you know I'm good at this, and my dry cleaner knows what you pay me.",
+      "The season turned, which means the market repriced everyone but me. Let's fix the 'but me' part.",
+      "I ran my own numbers the way I run everyone else's. The verdict: underpaid, but fixable."
+    ],
+    "producer-poach-warning-subject": [
+      "Someone's measuring {name}'s office",
+      "A little bird, re: {name}",
+      "{name} took a lunch. THE lunch."
+    ],
+    "producer-poach-warning": [
+      "{rival} took {name} to the kind of lunch that comes with a term sheet under the bread basket. This column gives it a week.",
+      "Word is {rival} has been whispering numbers at {name}, and {name} has been doing arithmetic with their face.",
+      "{name} was seen leaving {rival}'s lot 'visiting a friend'. Nobody has friends there. Act accordingly."
+    ],
+    "producer-poach-success-subject": [
+      "COUP: {name} defects",
+      "{name} changes lots"
+    ],
+    "producer-poach-success": [
+      "{name} walked off {rival}'s lot mid-coffee and onto yours. {rival} released a statement containing the word 'wish', doing heavy lifting.",
+      "The {name} raid is complete. {rival} is 'restructuring', which is what a studio says instead of crying."
+    ],
+    "producer-poach-fail-subject": [
+      "The {name} lunch went nowhere",
+      "{name} stays put (for now)"
+    ],
+    "producer-poach-fail": [
+      "You made a run at {name} and {rival} matched before dessert. Expensive lunch. Educational, though.",
+      "{name} heard the pitch, ordered the lobster, and stayed exactly where they were. This column respects the move."
+    ],
+    "producer-walked": [
+      "{name} has jumped to {rival}, citing 'growth', 'family', and a number with more digits in it.",
+      "{rival} announced {name}'s hire with a press release that mentions you zero times, which mentions you loudly."
+    ],
+    "career-breakout-greeting": [
+      "({name} arrives eleven minutes late and does not mention it. The hit does that.)",
+      "(There's a new wristwatch involved. It enters the room slightly before {name} does.)",
+      "({name} has someone now. The someone waits outside. The someone is holding two phones.)"
+    ],
+    "career-humbled-greeting": [
+      "({name} arrives early. Suspiciously early. There's a homemade baked good involved.)",
+      "({name} pulls out their own chair, then almost pulls out yours. The fall reads on them like a haircut.)",
+      "(No entourage. No sunglasses. {name} has the eyes of someone who now reads every contract twice.)"
     ]
   },
   "toneTiers": [

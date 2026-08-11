@@ -90,10 +90,13 @@ export class MeetingSession {
     this.data.schmoozeRounds = 0;
     const arrival = this.dlg().pick(this.content.voices.greetingMoods[mood] as string[]);
     const callback = callbackLine(person, this.sim.state.day, this.dlg());
+    // a recent career turn walks into the room before they do
+    const turn = person.careerTurn && this.sim.state.day - person.careerTurn.day < 60 ? person.careerTurn.kind : undefined;
+    const turnLine = turn ? this.sim.line(turn === "breakout" ? "career-breakout-greeting" : "career-humbled-greeting", { name: person.name.split(" ")[0] }) : "";
     return {
       speaker: person.name,
       portraitId: person.id,
-      text: `${person.name} ${arrival}.${callback ? `\n"${callback}"` : ""}\n${intro}`,
+      text: `${person.name} ${arrival}.${turnLine ? `\n${turnLine}` : ""}${callback ? `\n"${callback}"` : ""}\n${intro}`,
       tell: this.tell(),
       rapport: this.data.rapport,
       choices: (this.G.greetingResponses as any[]).map((g) => ({ id: g.id, line: g.line })),
@@ -1262,6 +1265,7 @@ export class MeetingSession {
         prod.relationship -= 20;
         this.sim.rep("loyalty", -4);
         remember(prod, this.sim.state.day, "you fired them at a standup, in front of everyone", -20);
+        this.sim.staffMoraleShock(-4); // the rest of the bench watches you do it
         acted.add(pid);
         return this.standupBeat(`${prod.name} goes very still, then very dignified. Security is not required, which is somehow worse. (${money(sev)} severance. The town will hear.)`);
       }
