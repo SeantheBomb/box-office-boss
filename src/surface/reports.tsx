@@ -159,6 +159,61 @@ export function WeekChart({ sim, openDossier }: { sim: Sim; openDossier?: (kind:
   );
 }
 
+/** The town's read on you: reputation axes, promises on the books, intel in hand. */
+export function TownReport({ sim, openDossier }: { sim: Sim; openDossier?: (kind: "movie" | "person", id: string) => void }) {
+  const r = sim.state.reputation!;
+  const promises = (sim.state.promises ?? []).filter((p) => !p.honored && !p.broken);
+  const settled = (sim.state.promises ?? []).filter((p) => p.honored || p.broken).slice(-3);
+  const intel = sim.freshIntel();
+  const axis = (label: string, v: number, low: string, high: string) => (
+    <div class="rep-axis" key={label} title={`${label}: ${Math.round(v)}/100`}>
+      <span class="rep-label">{label}</span>
+      <div class="rep-bar"><div style={{ width: `${v}%`, background: v > 60 ? "#3f6d3a" : v < 40 ? "#a33327" : "#c9a227" }} /></div>
+      <span class="rep-word">{v > 65 ? high : v < 35 ? low : "—"}</span>
+    </div>
+  );
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <h3>The Town's Read On You</h3>
+      <p style={{ fontSize: 12, fontStyle: "italic", color: "#666", margin: "4px 0 8px" }}>"{sim.repLine()}."</p>
+      {axis("Pays Well", r.paysWell, "nickel-squeezer", "full freight")}
+      {axis("On Time", r.onTime, "date-slipper", "ships the date")}
+      {axis("Prestige", r.prestige, "product", "real pictures")}
+      {axis("Loyalty", r.loyalty, "bridge-burner", "stands by people")}
+      {promises.length > 0 && (
+        <>
+          <h4 style={{ marginTop: 10, fontVariant: "small-caps" }}>Promises on the Books</h4>
+          {promises.map((p) => (
+            <p key={p.id} style={{ fontSize: 12 }}>
+              🤝 {p.text}
+              {p.personId && openDossier && (
+                <a class="doss-link" style={{ marginLeft: 6 }} onClick={() => openDossier("person", p.personId!)}>👤</a>
+              )}
+            </p>
+          ))}
+        </>
+      )}
+      {settled.length > 0 &&
+        settled.map((p) => (
+          <p key={p.id} style={{ fontSize: 11, opacity: 0.6, textDecoration: p.broken ? "line-through" : "none" }}>
+            {p.broken ? "✖" : "✔"} {p.text}
+          </p>
+        ))}
+      {intel.length > 0 && (
+        <>
+          <h4 style={{ marginTop: 10, fontVariant: "small-caps" }}>Intel in Hand</h4>
+          {intel.map((i) => (
+            <p key={i.id} style={{ fontSize: 12 }}>
+              🕵 {i.text} <span style={{ color: "#999", fontSize: 10 }}>(day {i.day}{i.reliable ? "" : " · whisper-column sourced"})</span>
+            </p>
+          ))}
+          <p style={{ fontSize: 10, color: "#999" }}>Spend intel in meetings — gossip in the schmooze, leverage at the table.</p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function MandateBoard({ sim }: { sim: Sim }) {
   const active = sim.state.mandates.filter((md) => !md.done && !md.failed);
   const closed = sim.state.mandates.filter((md) => md.done || md.failed).slice(-3);

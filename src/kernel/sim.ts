@@ -7,8 +7,11 @@ import type { Rng } from "./rng";
 import {
   type Content,
   type Email,
+  type Intel,
   type Mandate,
   type Movie,
+  type Promise2,
+  type Reputation,
   type Person,
   type RunState,
   type SimEvent,
@@ -22,7 +25,8 @@ import {
 import { mintWorld } from "./people";
 import { mintPitch, mintSequelPitch, type PitchData } from "./pitchgen";
 import { computeFunnel, discover, initAudience, weeklyFadTick, type FunnelResult } from "./audience";
-import { bankLine, fill, money, count } from "./text";
+import { bankLine, fill, money, count, selectLine } from "./text";
+import { mintVoice, voiceWrap, callbackLine, remember } from "./voice";
 
 export class Sim {
   state: RunState;
@@ -35,6 +39,78 @@ export class Sim {
     this.content = content;
     this.state = state;
     this.rng = new RngBank(state.seed, rngStates);
+    // P5 fields default in-place so pre-P5 v3 saves keep working
+    state.intel ??= [];
+    state.promises ??= [];
+    state.reputation ??= { paysWell: 50, onTime: 50, prestige: 50, loyalty: 50 };
+  }
+
+  // ---------- P5: reputation, intel, promises, institutions ----------
+  rep(axis: keyof Reputation, delta: number) {
+    const r = this.state.reputation!;
+    r[axis] = Math.max(0, Math.min(100, r[axis] + delta));
+  }
+
+  /** The town's read on you, in the town's words. */
+  repLine(): string {
+    const r = this.state.reputation!;
+    const bits: string[] = [];
+    if (r.paysWell > 65) bits.push("pays full freight");
+    else if (r.paysWell < 35) bits.push("squeezes every nickel");
+    if (r.onTime > 65) bits.push("ships on the date");
+    else if (r.onTime < 35) bits.push("slips every date");
+    if (r.prestige > 65) bits.push("makes real pictures");
+    else if (r.prestige < 35) bits.push("makes product");
+    if (r.loyalty > 65) bits.push("stands by their people");
+    else if (r.loyalty < 35) bits.push("burns bridges for warmth");
+    return bits.length ? bits.join(", ") : "still an unknown quantity";
+  }
+
+  addIntel(kind: Intel["kind"], subjectId: string | undefined, text: string, reliable = true) {
+    const intel: Intel = { id: this.id("in"), kind, subjectId, text, day: this.state.day, reliable };
+    this.state.intel!.push(intel);
+    if (this.state.intel!.length > 12) this.state.intel!.shift();
+    return intel;
+  }
+
+  freshIntel(subjectId?: string): Intel[] {
+    return this.state.intel!.filter((i) => !i.used && this.state.day - i.day < 120 && (!subjectId || i.subjectId === subjectId));
+  }
+
+  addPromise(kind: Promise2["kind"], text: string, personId?: string, movieId?: string): Promise2 {
+    const p: Promise2 = { id: this.id("pr"), kind, personId, movieId, text, day: this.state.day };
+    this.state.promises!.push(p);
+    return p;
+  }
+
+  honorPromise(p: Promise2, note?: string) {
+    p.honored = true;
+    this.rep("loyalty", 3);
+    const person = this.person(p.personId);
+    if (person) {
+      person.relationship += 10;
+      remember(person, this.state.day, `you kept your word on ${note ?? p.text}`, 10);
+    }
+  }
+
+  breakPromise(p: Promise2, note?: string) {
+    p.broken = true;
+    this.rep("loyalty", -6);
+    const person = this.person(p.personId);
+    if (person) {
+      person.relationship -= 14;
+      remember(person, this.state.day, `you broke your promise: ${note ?? p.text}`, -14);
+    }
+  }
+
+  columnists(): { news: string; gossip: string } {
+    if (!this.state.flags.columnists) {
+      const rng = this.rng.get("world");
+      const banks = this.content.people.nameBanks;
+      const mk = () => `${rng.pick([...banks.firstM, ...banks.firstF] as string[])} ${rng.pick(banks.last as string[])}`;
+      this.state.flags.columnists = { news: mk(), gossip: mk() };
+    }
+    return this.state.flags.columnists;
   }
 
   static newRun(content: Content, seed: number): Sim {
@@ -248,6 +324,7 @@ export class Sim {
     for (const s of st.studios) s.history.push({ week, profit: s.totalRevenue - s.reportedSpend });
     this.standingsEmail();
     this.rivalBankruptcyCheck();
+    this.maybeGossipColumn();
     this.scheduleAnnualEvents();
     this.scheduleStandups();
     // rival policy
@@ -270,7 +347,9 @@ export class Sim {
 
   private maybeDivaDemand(m: Movie) {
     const rng = this.rng.get("setbacks");
-    if (!rng.chance(this.content.economy.production.divaDemandChancePerWeek)) return;
+    // script-approval clauses embolden people — the promise has a cost
+    const approvalBoost = m.castIds.some((c) => this.state.flags[`scriptApproval_${m.id}_${c}`]) ? 1.8 : 1;
+    if (!rng.chance(this.content.economy.production.divaDemandChancePerWeek * approvalBoost)) return;
     const cast = m.castIds.map((c) => this.person(c)!).filter(Boolean);
     const diva = cast.length ? rng.pickWeighted(cast, (c) => 100 - (c.cooperation ?? 50)) : this.person(m.directorId);
     if (!diva) return;
@@ -280,6 +359,7 @@ export class Sim {
     this.pushEmail({
       from: `${this.person(m.producerId)?.name ?? "Set"} (re: ${diva.name})`,
       fromRole: "producer",
+      format: "note",
       subject: `${m.title}: we have a situation (it has a rider)`,
       body: `${demand}\nIndulging this costs ${money(cost)}. Refusing costs... something less measurable.`,
       actions: [
@@ -338,6 +418,37 @@ export class Sim {
         });
       }
     }
+  }
+
+  private maybeGossipColumn() {
+    const rng = this.rng.get("dialogue");
+    if (!rng.chance(0.22)) return;
+    const cols = this.columnists();
+    const rivals = this.state.studios.filter((x) => !x.isPlayer && !x.bankrupt);
+    if (!rivals.length) return;
+    const rival = rng.pick(rivals);
+    const someone = rng.pick(this.state.people.filter((x) => x.role === "cast" || x.role === "director"));
+    const hotGenre = Object.entries(this.state.audience.fads).sort((a, b) => b[1] - a[1])[0][0];
+    const items: [string, Intel["kind"], string | undefined][] = [
+      [`${rival.name}'s ${hotGenre} picture is "a situation," per three people who'd know`, "flop", rival.name],
+      [`${someone.name} was seen lunching OFF the lot. Twice. Draw conclusions`, "gossip", someone.id],
+      [`${hotGenre} is "over," declares someone who was wrong about it last time`, "taste", undefined],
+    ];
+    const [text, kind, subjectId] = rng.pick(items);
+    const reliable = rng.chance(0.65); // the gossip column is... directional
+    this.addIntel(kind, subjectId, text, reliable);
+    this.pushEmail({
+      from: `${cols.gossip} — The Whisper Column`,
+      fromRole: "trade",
+      format: "clipping",
+      subject: `WHISPERS: ${text.slice(0, 48)}…`,
+      body: `${text}.
+This column is never wrong. This column has been wrong twice this month.
+(Filed as intel — spend it in a room, at your own risk.)
+— ${cols.gossip}`,
+      actions: [],
+      ctx: {},
+    });
   }
 
   private regretRecap() {
@@ -609,14 +720,18 @@ export class Sim {
     return m;
   }
 
-  /** bankLine with a no-repeat memory window, for high-frequency texts. */
+  /** Utility-selected bank line: context tags (tone, genre, season…) steer which lines
+   *  surface; a no-repeat window keeps it fresh. THE standard way to pick text. */
   line(bank: string, ctx: Record<string, any> = {}): string {
     const mem: Record<string, string[]> = (this.state.flags._recentLines ??= {});
     const recent = (mem[bank] ??= []);
-    let out = bankLine(this.rng.get("dialogue"), this.content, bank, ctx);
-    for (let i = 0; i < 4 && recent.includes(out); i++) out = bankLine(this.rng.get("dialogue"), this.content, bank, ctx);
+    const entries = (this.content.templates.banks as Record<string, any[]>)[bank];
+    if (!entries?.length) return `[missing bank: ${bank}]`;
+    const d = calDate(this.state.day);
+    const fullCtx = { season: SEASONS[d.season], tier: ["warm", "curt", "cold", "hostile"][this.toneTier()], ...ctx };
+    const out = fill(selectLine(this.rng.get("dialogue"), entries, fullCtx, recent), ctx);
     recent.push(out);
-    if (recent.length > 3) recent.shift();
+    if (recent.length > 4) recent.shift();
     return out;
   }
 
@@ -656,7 +771,7 @@ export class Sim {
       from: writer.name,
       fromRole: "writer",
       subject: this.line("pitch-subject", { hook: pitch.hook }),
-      body,
+      body: voiceWrap(this.content, writer, body, this.state.day),
       actions: [
         { id: "scheduleMeeting", label: "Schedule Pitch Meeting" },
         { id: "ignore", label: "Ignore" },
@@ -865,6 +980,9 @@ export class Sim {
     m.releaseDay = this.state.day;
     // the books open: full budget + campaign posts to the public standings as one lump
     this.state.studios[m.studio].reportedSpend += m.budget + m.marketing;
+    if (m.studio === 0 && m.announcedRelease !== undefined) {
+      this.rep("onTime", this.state.day <= m.announcedRelease + 3 ? 2 : -3);
+    }
     this.generateReviews(m);
     const tier = (this.content.economy.post.marketingTiers as any[]).find((t) => t.id === ev.data.marketingTier) ?? { reach: 0.4 };
     const funnel = computeFunnel(this.content, this.state, m, tier.reach);
@@ -892,6 +1010,8 @@ export class Sim {
       if (opening < m.budget * 0.12) {
         this.state.patience -= this.content.economy.patienceFlopHit;
       }
+      if (stars >= 4) this.rep("prestige", 3);
+      else if (stars <= 2) this.rep("prestige", -2);
       // premiere night: you're going, it's your movie
       this.addEvent(this.state.day, "evening", "meeting", "premiere", { movieId: m.id });
       // critic review emails (top 2)
@@ -975,6 +1095,17 @@ export class Sim {
     m.revenue += revenue;
     this.earn(m.studio, revenue);
     m.phase = "done";
+    if (m.studio === 0) {
+      // backend points collect here — the promise pays out
+      for (const pr of this.state.promises!.filter((x) => x.kind === "backend" && x.movieId === m.id && !x.honored && !x.broken)) {
+        const net = m.revenue - m.budget;
+        if (net > 0) {
+          const cut = Math.round(net * 0.06);
+          this.spend(0, cut);
+          this.honorPromise(pr, `backend points on "${m.title}" (${money(cut)} paid out)`);
+        } else pr.honored = true;
+      }
+    }
     // free talent
     for (const cid of [...m.castIds, m.directorId].filter(Boolean) as string[]) {
       const p = this.person(cid)!;
@@ -1168,6 +1299,7 @@ export class Sim {
     this.pushEmail({
       from: "The Board",
       fromRole: "board",
+      format: "memo",
       subject: `A note from the board (it is not optional)`,
       body: `${this.line("mandate-issued")}\n"${mandate.text}"\nDeadline: WK ${dd.week} YR ${dd.year}. Deliver and the board's affection grows. Don't, and it doesn't.`,
       actions: [],
@@ -1221,8 +1353,9 @@ export class Sim {
     });
     if (overtaker) body += bankLine(dlg, this.content, "overtake-needle", { rival: overtaker });
     this.pushEmail({
-      from: "The Numbers",
+      from: `${this.columnists().news} — The Numbers Desk`,
       fromRole: "trade",
+      format: "clipping",
       subject: `Week ${d.week} Standings — ${bankLine(dlg, this.content, `standings-quip-${trend}`)}`,
       body,
       actions: [],
@@ -1242,12 +1375,14 @@ export class Sim {
     }
     body += `\n${bankLine(dlg, this.content, "news-closer")}`;
     this.pushEmail({
-      from: "Varietal Trade Daily",
+      from: `${this.columnists().news} — Varietal Trade Daily`,
       fromRole: "trade",
       subject: `${ctx.rival} ${bankLine(dlg, this.content, `news-verb-${kind}`)} — "${ctx.title}"`,
-      body,
+      body: `${body}
+— ${this.columnists().news}`,
       actions: [],
       ctx,
+      format: "clipping",
     });
   }
 
@@ -1521,6 +1656,12 @@ export class Sim {
 
   private cancelMovie(m: Movie) {
     m.phase = "cancelled";
+    if (m.studio === 0) {
+      this.rep("loyalty", -3);
+      for (const pr of this.state.promises!.filter((x) => x.movieId === m.id && !x.honored && !x.broken)) {
+        this.breakPromise(pr, `"${m.title}" was shut down with their deal attached`);
+      }
+    }
     for (const cid of [...m.castIds, m.directorId].filter(Boolean) as string[]) {
       const p = this.person(cid)!;
       p.busyUntil = this.state.day;
@@ -1535,6 +1676,18 @@ export class Sim {
 
   // ---------- player phase starters ----------
   startScript(m: Movie, writer: Person) {
+    // sequel options collect the moment the sequel is real
+    if (m.sequelOf) {
+      for (const pr of this.state.promises!.filter((x) => x.kind === "sequel" && x.movieId === m.sequelOf && !x.honored && !x.broken)) {
+        const talent = this.person(pr.personId);
+        if (talent && talent.busyUntil <= this.state.day) {
+          m.idealCastIds = [talent.id, ...m.idealCastIds.filter((c) => c !== talent.id)].slice(0, 2);
+          this.honorPromise(pr, `their sequel option on the franchise`);
+        } else if (talent) {
+          this.breakPromise(pr, `the sequel went ahead while they were unavailable`);
+        }
+      }
+    }
     const E = this.content.economy.phases;
     const cost = Math.round(m.minBudget * E.greenlightScriptFactor);
     this.spend(0, cost);

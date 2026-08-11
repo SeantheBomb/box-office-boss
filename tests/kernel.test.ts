@@ -115,7 +115,7 @@ describe("full loop", () => {
         const session = new MeetingSession(sim, ev);
         let beat = session.start();
         let guard = 0;
-        while (!beat.done && beat.choices?.length && guard++ < 10) beat = session.choose(beat.choices[0].id);
+        while (!beat.done && beat.choices?.length && guard++ < 18) beat = session.choose(beat.choices.find((c) => !c.gated)?.id ?? beat.choices[0].id);
       }
     }
     expect(sim.state.gameOver).toBeTruthy();

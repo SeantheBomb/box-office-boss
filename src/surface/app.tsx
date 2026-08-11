@@ -14,7 +14,7 @@ import { useWindows, Window } from "./windows";
 import { BUILD_VERSION, CHANGELOG } from "../version";
 import { MailApp } from "./mail";
 import { CalendarApp } from "./calendar";
-import { StandingsChart, ProductionBoard, AudienceReport, WeekChart, MandateBoard } from "./reports";
+import { StandingsChart, ProductionBoard, AudienceReport, WeekChart, MandateBoard, TownReport } from "./reports";
 import { MovieDossier, PersonDossier } from "./dossiers";
 import { audio } from "./audio";
 import { MenuBar, Dock, ToastStack, Onboarding, type Profile, type Toast } from "./macos";
@@ -296,6 +296,7 @@ export function App({ content }: { content: Content }) {
       case "standings":
         return (
           <div class="report-sheet windowed">
+            <TownReport sim={sim} openDossier={openDossier} />
             <MandateBoard sim={sim} />
             <h3>This Week at the Box Office</h3>
             <WeekChart sim={sim} openDossier={openDossier} />
@@ -469,6 +470,14 @@ function DrawerModal({ sim, onClose, onNew, onImport }: { sim: Sim; onClose: () 
               if (f) onImport(await f.text());
             }}
           />
+          <label style={{ fontSize: 13, display: "flex", gap: 8, alignItems: "center", padding: "4px 2px" }}>
+            <input
+              type="checkbox"
+              checked={localStorage.getItem("bob.timedChoices") === "1"}
+              onChange={(e) => localStorage.setItem("bob.timedChoices", (e.target as HTMLInputElement).checked ? "1" : "0")}
+            />
+            ⏱ Timed choices in tense moments (Telltale mode)
+          </label>
           <button onClick={onNew}>🎬 New studio (new name, new seed)</button>
           <button onClick={onClose}>Close</button>
         </div>

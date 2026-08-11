@@ -1,0 +1,34 @@
+{
+  "catchphrases": {
+    "warm": ["Between us?", "You know me.", "Listen —", "Here's the thing, and I mean this:", "Real talk:", "Bubbeleh,", "You're gonna love this:", "Swear on my career:"],
+    "sharp": ["Cutting to it:", "Clock's running, so:", "No preamble:", "Facts first:", "I'll be brief. I won't, but pretend:", "Point is:"],
+    "anxious": ["Okay so don't panic but", "Before you read further, breathe:", "I've drafted this six times:", "Promise you'll read to the end:", "This is fine. Anyway:"],
+    "grandiose": ["Destiny called; I answered on speaker:", "History will note:", "As I told Spielberg — different Spielberg —", "Mark this day:", "The muses and I have conferred:"]
+  },
+  "signoffs": {
+    "warm": ["— yours in the trenches", "— hugs, professionally", "— call me, actually call me", "— your favorite problem", "— warmly, and I mean it for once"],
+    "sharp": ["— sent from my better phone", "— billable minutes end here", "— you know where to find me", "— that's the memo", "— onward"],
+    "anxious": ["— sorry for the length. and the tone. and generally", "— please advise (please)", "— nervously yours", "— I'll be by the phone. all night. no pressure"],
+    "grandiose": ["— from the desk that matters", "— a legend, retired but reachable", "— yours between masterpieces", "— dictated, not read, obviously"]
+  },
+  "metaphorDomains": {
+    "cooking": ["this thing is seasoned to perfection", "we're still preheating", "it needs one more ingredient", "don't let it boil over", "serve it while it's hot"],
+    "boxing": ["we're in the late rounds", "keep your guard up on this one", "it's a haymaker of a premise", "don't leave it on the ropes", "we win on points, not knockouts"],
+    "weather": ["there's a front moving in on this one", "clear skies if we move now", "I smell rain on this deal", "we're in the eye of it", "batten down, premiere week is coming"],
+    "gambling": ["the table's hot right now", "I don't bluff on Tuesdays", "we're pot-committed", "read the room like a card counter", "double down or fold, no limping"],
+    "sailing": ["the wind's finally with us", "don't jibe mid-negotiation", "we're taking on water quietly", "trim the sails on that budget", "port is closer than it looks"],
+    "gardening": ["this one needs pruning, not pulling", "we planted this two quarters ago", "let it root before you tug", "there's rot under the leaves", "harvest season, finally"]
+  },
+  "tells": {
+    "high": ["(They lean in. The chair creaks agreement.)", "(A real smile — the eyes joined in this time.)", "(They're mirroring your posture. Textbook, and working.)", "(They refill YOUR water. Enormous.)", "(Their phone buzzes; they silence it without looking.)"],
+    "mid": ["(Polite nod. Weather-report eyes.)", "(They check the door once. Just once.)", "(Arms uncrossed, but the pen is capped.)", "(A 'go on' gesture at three-quarters enthusiasm.)"],
+    "low": ["(The watch check with the whole arm.)", "(They've begun stacking papers that were already stacked.)", "(A smile with all the warmth of a contract clause.)", "(They just said 'anyway' to nothing. Land the plane.)", "(The folder migrates back toward their bag.)"]
+  },
+  "greetingMoods": {
+    "great": ["breezes in like the weekend grosses personally apologized to them", "arrives mid-anecdote, and it's actually funny", "is glowing. Someone said yes to them today"],
+    "good": ["arrives on time, which around here is a love language", "settles in with coffee for both of you. Both!", "greets you by name. First AND last. Power move, taken kindly"],
+    "neutral": ["arrives precisely professional", "gives the handshake of someone conserving battery", "sits, aligns the chair, waits. All business today"],
+    "bad": ["arrives with the energy of a delayed flight", "is wearing sunglasses. Indoors. At a meeting", "answers your hello with a sigh shaped like your name"],
+    "awful": ["arrives twenty minutes of grievance in a ten-minute window", "slams nothing, which is somehow worse", "greets your assistant warmly and you not at all"]
+  }
+}

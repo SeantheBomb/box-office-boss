@@ -84,6 +84,9 @@ export interface Person {
   busyUntil: number; // day; talent locked to a production until then
   signedByStudio?: number; // studio index currently employing
   agentId?: string; // cast & directors are repped
+  // P5 writing systems
+  voice?: Voice; // minted lazily — every person keeps one voice forever
+  memories?: Memory[]; // what they remember about YOU
 }
 
 export interface Incident {
@@ -273,6 +276,7 @@ export interface Email {
   actionTaken?: string;
   ctx: Record<string, any>;
   embed?: { kind: "standings" | "funnel"; movieId?: string };
+  format?: "memo" | "clipping" | "telegram" | "note"; // diegetic stationery
 }
 
 // ---------- run state ----------
@@ -303,6 +307,10 @@ export interface RunState {
   eventLog: SimEvent[]; // processed events, for the calendar's past (capped)
   mandates: Mandate[];
   weekChart: { movieId: string; gross: number }[]; // this week's box office, ranked
+  // P5 writing systems (lazily defaulted for older v3 saves)
+  intel?: Intel[];
+  promises?: Promise2[];
+  reputation?: Reputation;
 }
 
 export interface PendingMeeting {
@@ -320,4 +328,50 @@ export interface Content {
   economy: any;
   templates: Record<string, any>;
   meetings: any;
+  inspiration: any;
+  voices: any;
+  lexicon: any;
+}
+
+// ---------- P5 writing systems ----------
+export interface Voice {
+  tone: "warm" | "sharp" | "anxious" | "grandiose";
+  metaphorDomain: string;
+  catchphrase: string;
+  signoff: string;
+  verbosity: "terse" | "normal" | "florid";
+}
+
+export interface Memory {
+  day: number;
+  text: string; // "you lowballed them on Dread Depth"
+  delta: number; // relationship impact it carried
+}
+
+export interface Intel {
+  id: string;
+  kind: "gossip" | "flop" | "availability" | "taste";
+  subjectId?: string; // person or studio name
+  text: string;
+  day: number;
+  reliable: boolean; // the gossip columnist is sometimes wrong
+  used?: boolean;
+}
+
+export interface Promise2 {
+  id: string;
+  kind: "sequel" | "backend" | "scriptApproval" | "canon" | "attachment";
+  personId?: string;
+  movieId?: string;
+  text: string;
+  day: number;
+  honored?: boolean;
+  broken?: boolean;
+}
+
+export interface Reputation {
+  paysWell: number;
+  onTime: number;
+  prestige: number;
+  loyalty: number;
 }

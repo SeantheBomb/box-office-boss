@@ -21,7 +21,33 @@ const SCENE_CLASS: Record<string, string> = {
 
 export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; event: SimEvent; onDone: () => void; openDossier: OpenDossier }) {
   const session = useMemo(() => new MeetingSession(sim, event), [event.id]);
-  const [beat, setBeat] = useState<Beat>(() => session.start());
+  const [beat, setBeatRaw] = useState<Beat>(() => session.start());
+  const [memoryToast, setMemoryToast] = useState<string | undefined>();
+  const [timer, setTimer] = useState<number | undefined>();
+  const timedOn = localStorage.getItem("bob.timedChoices") === "1";
+  const setBeat = (b: Beat) => {
+    setBeatRaw(b);
+    if (b.memoryNote) {
+      setMemoryToast(b.memoryNote);
+      setTimeout(() => setMemoryToast(undefined), 3500);
+    }
+  };
+  // pressure beats: a clock, if the player asked for one. Timeout = visible hesitation.
+  useEffect(() => {
+    if (!timedOn || !beat.pressure || beat.done) { setTimer(undefined); return; }
+    let t = 10;
+    setTimer(t);
+    const iv = setInterval(() => {
+      t -= 1;
+      setTimer(t);
+      if (t <= 0) {
+        clearInterval(iv);
+        const c = beat.choices?.find((x) => !x.gated);
+        if (c) setBeat(session.choose(c.id)); // hesitation picks for you
+      }
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [beat, timedOn]);
   const meetingDef = sim.content.meetings[event.type] ?? {};
   const sceneClass = SCENE_CLASS[meetingDef.scene] ?? "meetingRoom";
   const person = beat.portraitId ? sim.person(beat.portraitId) : undefined;
@@ -49,7 +75,8 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
       }
       const n = parseInt(e.key, 10);
       if (!beat.done && n >= 1 && n <= (beat.choices?.length ?? 0)) {
-        setBeat(session.choose(beat.choices![n - 1].id));
+        const c = beat.choices![n - 1];
+        if (!c.gated) setBeat(session.choose(c.id));
       }
     };
     window.addEventListener("keydown", onKey);
@@ -83,17 +110,36 @@ export function MeetingScene({ sim, event, onDone, openDossier }: { sim: Sim; ev
         )}
       </div>
       <div class="table" />
+      {memoryToast && <div class="memory-toast">🔖 {memoryToast}</div>}
       <div class="dialogue">
-        <div class="speaker">{meetingDef.title ?? event.type}</div>
+        <div class="dialogue-head">
+          <span class="speaker">{meetingDef.title ?? event.type}</span>
+          {beat.rapport !== undefined && (
+            <span class="rapport" title={`How the room feels: ${Math.round(beat.rapport)}/100`}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <i key={i} class={`rap-dot ${beat.rapport! > i * 20 + 10 ? "on" : ""} ${beat.rapport! > 60 ? "warm" : beat.rapport! < 36 ? "cold" : ""}`} />
+              ))}
+            </span>
+          )}
+          {timer !== undefined && <span class={`beat-timer ${timer <= 3 ? "urgent" : ""}`}>{timer}</span>}
+        </div>
         <div class="text">{beat.text}</div>
+        {beat.tell && <div class="beat-tell">{beat.tell}</div>}
         {beat.done ? (
           <button class="continue" onClick={onDone}>Continue ▸ <span class="key-hint">(Enter)</span></button>
         ) : (
           <div class="choices">
             <div class="choose-label">— choose your line —</div>
             {(beat.choices ?? []).map((c, i) => (
-              <button key={c.id} onClick={() => { audio.sfx("click", 0.5); setBeat(session.choose(c.id)); }}>
+              <button
+                key={c.id}
+                class={c.gated ? "gated" : ""}
+                disabled={!!c.gated}
+                title={c.gated}
+                onClick={() => { audio.sfx("click", 0.5); setBeat(session.choose(c.id)); }}
+              >
                 <span class="choice-num">{i + 1}</span> “{c.line}”
+                {c.gated && <span class="gate-req">🔒 {c.gated}</span>}
               </button>
             ))}
           </div>

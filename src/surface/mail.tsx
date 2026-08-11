@@ -97,7 +97,7 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
   const ctxMovie = sim.movie(email.ctx.movieId);
   const ctxPerson = sim.person(email.ctx.writerId ?? email.ctx.producerId ?? email.ctx.castId);
   return (
-    <div class="inbox-read">
+    <div class={`inbox-read fmt-${email.format ?? "plain"}`}>
       <h3>{email.subject}</h3>
       <div class="meta">
         {email.from} · {DOW[d.dayOfWeek]} wk{d.week} yr{d.year}

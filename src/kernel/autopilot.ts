@@ -37,17 +37,19 @@ export function disciplinedEmailPolicy(maxActive = 3) {
 }
 
 export function disciplinedMeetingPolicy(maxActive = 3) {
-  return (s: Sim, choices: { id: string; line: string }[]): string => {
+  return (s: Sim, choices: { id: string; line: string; gated?: string }[]): string => {
     const active = s.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled", "development"].includes(m.phase)).length;
     if (active >= maxActive && choices.some((c) => c.id === "pos_pass")) return "pos_pass";
     const gl = choices.find((c) => c.id === "pos_greenlight");
     if (gl) return gl.id;
-    // festival: keep the checkbook closed; packaging: first candidate is fine; packages: decline
-    for (const id of ["pass", "ride", "pkg_decline"]) {
-      const c = choices.find((x) => x.id === id);
+    // GSBT navigation: skip the pleasantries, standard paper, ignore the phone.
+    // Then: festival closed checkbook, first packaging candidate, no agent packages.
+    for (const id of ["greet_business", "toBusiness", "terms_standard", "phone_ignore", "meet", "pass", "ride", "pkg_decline"]) {
+      const c = choices.find((x) => x.id === id && !x.gated);
       if (c) return c.id;
     }
-    return choices[0].id;
+    const ungated = choices.find((c) => !(c as any).gated);
+    return (ungated ?? choices[0]).id;
   };
 }
 
@@ -66,7 +68,7 @@ export function autoplay(sim: Sim, opts: AutopilotOptions) {
       const session = new MeetingSession(sim, ev);
       let beat = session.start();
       let guard = 0;
-      while (!beat.done && beat.choices?.length && guard++ < 10) {
+      while (!beat.done && beat.choices?.length && guard++ < 18) {
         beat = session.choose(meetingPolicy(sim, beat.choices));
       }
     }

@@ -699,3 +699,63 @@ body { background: #171512; color: var(--ink); overflow: hidden; }
   .onboard-cols { grid-template-columns: 1fr; }
   .onboard-form { border-left: none; padding-left: 0; }
 }
+
+/* ================= P5: dialog v2 + writing systems ================= */
+
+/* rapport needle + tells */
+.dialogue-head { display: flex; align-items: center; gap: 12px; }
+.rapport { display: flex; gap: 3px; align-items: center; }
+.rap-dot { width: 9px; height: 9px; border-radius: 50%; background: #3a3428; border: 1px solid #55503f; }
+.rap-dot.on { background: #c9a227; }
+.rap-dot.on.warm { background: #58d878; box-shadow: 0 0 6px #58d87866; }
+.rap-dot.on.cold { background: #e0483e; }
+.beat-tell { font-style: italic; color: #b8a878; font-size: 13px; margin-top: 2px; }
+.beat-timer {
+  margin-left: auto; background: #c9a227; color: #201b10; font-weight: 800; font-size: 14px;
+  min-width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center;
+}
+.beat-timer.urgent { background: #e0483e; color: #fff; animation: pulse 0.5s infinite; }
+
+/* gated (M&B-style) choices */
+.dialogue .choices button.gated {
+  opacity: 0.45; cursor: not-allowed; border-left-color: #555;
+}
+.gate-req { display: block; font-size: 11px; color: #d8a878; margin-top: 2px; }
+
+/* "will remember that" */
+.memory-toast {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(20, 16, 10, 0.92); color: #e8c14a; border: 1px solid #c9a227;
+  padding: 7px 18px; border-radius: 6px; font-size: 13px; z-index: 40;
+  animation: memfade 3.5s ease forwards;
+}
+@keyframes memfade { 0% { opacity: 0; transform: translate(-50%, -8px); } 10% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+/* reputation axes */
+.rep-axis { display: grid; grid-template-columns: 80px 1fr 110px; gap: 8px; align-items: center; margin-bottom: 4px; font-size: 12px; }
+.rep-label { color: #666; }
+.rep-bar { height: 8px; background: #e4ddcb; border-radius: 4px; overflow: hidden; }
+.rep-bar > div { height: 100%; border-radius: 4px; transition: width 0.4s; }
+.rep-word { font-size: 11px; font-style: italic; color: #8a7a5a; }
+
+/* email stationery formats */
+.inbox-read.fmt-memo {
+  background: #fdf8ea; font-family: "Courier New", monospace;
+  border-left: 6px double #a33327;
+}
+.inbox-read.fmt-memo h3 { text-transform: uppercase; letter-spacing: 1px; }
+.inbox-read.fmt-memo h3::before { content: "INTEROFFICE MEMO — "; color: #a33327; font-size: 11px; letter-spacing: 2px; display: block; }
+.inbox-read.fmt-clipping {
+  background: #f6f1e4;
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, #00000008 27px 28px);
+  font-family: Georgia, serif;
+}
+.inbox-read.fmt-clipping h3 { font-size: 19px; border-bottom: 3px double #333; padding-bottom: 4px; }
+.inbox-read.fmt-clipping .body { column-gap: 20px; }
+.inbox-read.fmt-telegram { background: #f2ecd8; font-family: "Courier New", monospace; text-transform: uppercase; font-size: 12px; }
+.inbox-read.fmt-note {
+  background: #fbf6e8;
+  background-image: repeating-linear-gradient(0deg, transparent 0 26px, #b8d0e855 26px 27px);
+  font-family: "Segoe Script", "Comic Sans MS", cursive;
+}
+.inbox-read.fmt-note h3 { font-family: inherit; }

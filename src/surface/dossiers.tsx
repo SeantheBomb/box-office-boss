@@ -280,6 +280,24 @@ export function PersonDossier({ sim, personId, openDossier, bump }: { sim: Sim; 
           </button>
         )}
       </section>
+      {(p.memories?.length ?? 0) > 0 && (
+        <section>
+          <h4>What They Remember About You</h4>
+          {p.memories!.slice(-5).reverse().map((m, i) => (
+            <p key={i} style={{ fontSize: 12, color: m.delta >= 0 ? "#3f6d3a" : "#a33327" }}>
+              {m.delta >= 0 ? "＋" : "－"} {m.text} <span style={{ color: "#999", fontSize: 10 }}>(day {m.day})</span>
+            </p>
+          ))}
+        </section>
+      )}
+      {(sim.state.promises ?? []).filter((pr) => pr.personId === p.id && !pr.honored && !pr.broken).length > 0 && (
+        <section>
+          <h4>Open Promises</h4>
+          {(sim.state.promises ?? []).filter((pr) => pr.personId === p.id && !pr.honored && !pr.broken).map((pr) => (
+            <p key={pr.id} style={{ fontSize: 12 }}>🤝 {pr.text}</p>
+          ))}
+        </section>
+      )}
       {commitments.length > 0 && (
         <section>
           <h4>Current Commitments</h4>

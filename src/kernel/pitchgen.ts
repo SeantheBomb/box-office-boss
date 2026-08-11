@@ -19,24 +19,66 @@ export interface PitchData {
   idealCastIds: string[];
 }
 
-export function mintTitle(rng: Rng, content: Content, state?: RunState): string {
+/** Embedding-guided word pick: candidates score by genre affinity × coherence with the
+ *  anchor word (cosine-neighbor bonus from the baked SVD space) × novelty. */
+// meta-words: high genre-lift in the corpus but useless as title words
+const LEX_META = new Set([
+  "comedy", "thriller", "horror", "drama", "western", "animation", "animated", "biography",
+  "documentary", "film", "movie", "story", "sequel", "remake", "reboot", "novel", "based",
+  "series", "musical", "fiction", "cinema", "feature", "genre", "adaptation", "anthology",
+]);
+
+export function lexPick(rng: Rng, content: Content, genre: string | undefined, anchor: string | undefined, exclude: Set<string>): string | undefined {
+  const lex = content.lexicon;
+  const pool: [string, number][] = genre ? lex?.genreWords?.[genre] ?? [] : Object.values(lex?.genreWords ?? {}).flat() as [string, number][];
+  if (!pool.length) return undefined;
+  const anchorNbrs: string[] = anchor ? lex.neighbors?.[anchor] ?? [] : [];
+  const scored = pool
+    .filter(([w]) => !exclude.has(w) && w !== anchor && !LEX_META.has(w))
+    .map(([w, s]) => [w, s * (anchorNbrs.includes(w) ? 4 : 1) * (0.6 + rng.next() * 0.8)] as [string, number]);
+  if (!scored.length) return undefined;
+  scored.sort((a, b) => b[1] - a[1]);
+  const top = scored.slice(0, 6);
+  return top[rng.pickWeighted([...top.keys()], (i) => top[i][1])][0];
+}
+
+const cap = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
+
+/** Title built from genre-coherent lexicon words when the bake is present. */
+function makeTitle(rng: Rng, content: Content, genre: string | undefined, inspWords: string[], P: any): string {
+  const grammar = rng.pick(P.titleGrammars as string[]);
+  const used = new Set<string>();
+  let anchor: string | undefined;
+  return grammar.replace(/\{([\w-]+)\}/g, (_: string, key: string) => {
+    if (key === "adj" || key === "noun" || key === "noun2") {
+      const lexWord = rng.chance(0.75) ? lexPick(rng, content, genre, anchor, used) : undefined;
+      if (lexWord) {
+        used.add(lexWord);
+        anchor ??= lexWord; // later slots cohere with the first
+        return cap(lexWord);
+      }
+      if (inspWords.length > 100 && rng.chance(0.45)) return rng.pick(inspWords);
+    }
+    const bank = P.titleWords[key] as string[] | undefined;
+    return bank ? rng.pick(bank) : key;
+  });
+}
+
+export function mintTitle(rng: Rng, content: Content, state?: RunState, genre?: string): string {
   const P = content.pitches;
   const inspWords: string[] = (content as any).inspiration?.titleWords ?? [];
-  const make = () => {
-    const grammar = rng.pick(P.titleGrammars as string[]);
-    return grammar.replace(/\{([\w-]+)\}/g, (_, key) => {
-      const bank = P.titleWords[key] as string[] | undefined;
-      // TMDB-harvested words blend into adj/noun slots for variety
-      if ((key === "adj" || key === "noun" || key === "noun2") && inspWords.length > 100 && rng.chance(0.45)) return rng.pick(inspWords);
-      return bank ? rng.pick(bank) : key;
-    });
-  };
-  // non-franchise movies never share a name — retry against every title in the world
-  const used = new Set(state?.movies.map((m) => m.title.toLowerCase()) ?? []);
+  const make = () => makeTitle(rng, content, genre, inspWords, P);
+  // non-franchise movies never share a name — retry against every title in the world,
+  // INCLUDING titles still floating around as pitches (the lexicon concentrates word
+  // choices per genre, so two writers can otherwise land on the same title)
+  const used = new Set([
+    ...(state?.movies.map((m) => m.title.toLowerCase()) ?? []),
+    ...(((state?.flags?.usedTitles as string[]) ?? []).map((t) => t.toLowerCase())),
+  ]);
   let title = make();
   for (let i = 0; i < 30 && used.has(title.toLowerCase()); i++) title = make();
   if (used.has(title.toLowerCase())) title = `${title} (${rng.int(2, 99)})`; // pathological fallback
-  return title;
+  return title.replace(/A ([AEIOU])/g, "An $1"); // article agreement
 }
 
 export function mintPitch(rng: Rng, content: Content, state: RunState, writer: Person, forStudio: number): PitchData {
@@ -56,8 +98,22 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
   let theme2 = rng.pick(P.themes as string[]);
   if (theme2 === theme1) theme2 = rng.pick(P.themes as string[]);
   const seeds: string[] = (content as any).inspiration?.loglineSeeds ?? [];
+  const phrases: string[] = content.lexicon?.keywordPhrases?.[genre] ?? [];
   let logline: string;
-  if (seeds.length > 50 && rng.chance(0.35)) {
+  if (phrases.length > 20 && rng.chance(0.45)) {
+    // genre-true concept collision, built from TMDB's curated keyword space
+    const art = (w: string) => (w.includes(" ") || /s$/.test(w) ? w : `${/^[aeiou]/.test(w) ? "an" : "a"} ${w}`);
+    const p1 = rng.pick(phrases.slice(0, 60));
+    let p2 = rng.pick(phrases.slice(0, 60));
+    for (let i = 0; i < 5 && (p2 === p1 || p2.split(" ")[0] === p1.split(" ")[0]); i++) p2 = rng.pick(phrases);
+    logline = rng.pick([
+      `${art(p1)} story that collides head-on with ${art(p2)}`,
+      `${art(p1)}, except the real problem is ${art(p2)}`,
+      `what starts as ${art(p1)} curdles into ${art(p2)}`,
+      `they signed up for ${art(p1)}. Nobody mentioned ${art(p2)}`,
+      `equal parts ${p1} and ${p2}, holding hands off a cliff`,
+    ]);
+  } else if (seeds.length > 50 && rng.chance(0.4)) {
     // a real movie's premise, straight-faced, as if it were brand new
     logline = rng.pick(seeds).replace(/\.$/, "").toLowerCase();
     logline = logline.charAt(0) + logline.slice(1);
@@ -76,7 +132,12 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
     if (b === a) b = rng.pick(realTitles);
     logline += `. It's ${a} meets ${b}`;
   }
-  const title = mintTitle(rng, content, state);
+  const title = mintTitle(rng, content, state, genre);
+  if (state) {
+    const ut: string[] = ((state.flags as any).usedTitles ??= []);
+    ut.push(title);
+    if (ut.length > 250) ut.shift();
+  }
   const titleWords = title.replace(/[^a-zA-Z\s]/g, "").split(/\s+/).filter((w) => w.length > 3);
   // the hook IS the pitch: subject lines derive from what's actually being sold
   const hook = rng.pick([subgenre.toUpperCase(), theme1.toUpperCase(), ...(titleWords.length ? [rng.pick(titleWords).toUpperCase()] : [])]);

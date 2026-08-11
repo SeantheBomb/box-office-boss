@@ -10,12 +10,14 @@ import economy from "../../content/economy.json";
 import templates from "../../content/templates.json";
 import meetings from "../../content/meetings.json";
 import inspiration from "../../content/inspiration.json";
+import voices from "../../content/voices.json";
+import lexicon from "../../content/lexicon.json";
 import type { Content } from "../kernel/types";
 
-export const FILES = ["game", "people", "pitches", "setbacks", "audience", "economy", "templates", "meetings", "inspiration"] as const;
+export const FILES = ["game", "people", "pitches", "setbacks", "audience", "economy", "templates", "meetings", "inspiration", "voices", "lexicon"] as const;
 export type ContentFile = (typeof FILES)[number];
 
-const bundled: Record<ContentFile, any> = { game, people, pitches, setbacks, audience, economy, templates, meetings, inspiration };
+const bundled: Record<ContentFile, any> = { game, people, pitches, setbacks, audience, economy, templates, meetings, inspiration, voices, lexicon };
 
 export function deepDefaults(target: any, defaults: any): any {
   if (target === undefined || target === null) return structuredClone(defaults);
@@ -62,6 +64,9 @@ export function assemble(published?: Partial<Record<ContentFile, any>>, draft?: 
     economy: out.economy,
     templates: out.templates,
     meetings: out.meetings,
+    inspiration: out.inspiration,
+    voices: out.voices,
+    lexicon: out.lexicon,
   };
 }
 

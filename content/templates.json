@@ -1,102 +1,498 @@
 {
   "banks": {
-    "pitch-subject": ["One word: {hook}", "The {hook} thing. It's time.", "I haven't slept. ({hook})", "You're going to say no. Read it anyway.", "This is the one. I mean it this time."],
-    "pitch-greeting-warm": ["Boss! You beautiful gambler.", "You magnificent risk-taker, listen:", "I was saving this one for you."],
-    "pitch-greeting-neutral": ["Boss —", "Quick one:", "Got a minute?"],
-    "pitch-greeting-cold": ["I know you passed on my last three. Fine.", "Against my agent's advice, here goes:", "You owe me a read and you know why."],
-    "pitch-twist": ["with a bigger boat", "in space", "but the dog lives", "told backwards", "with a Christmas setting for tax reasons", "and the villain is the economy", "except everyone's lying", "but it's also a heist"],
-    "writer-signoff": ["— written on a napkin, transcribed with love", "— my landlord says hi", "— awards bait? You decide. (It is.)", "— I've already told my mother it's happening", "— this email is my pitch meeting cardio"],
-    "setback-subject-directorRecall": ["About {director}...", "{director} has left the building", "Director situation. Sitting down?"],
-    "setback-subject-castInjury": ["About {cast}'s back...", "{cast} + stunt = urgent care", "Medical update from set (not great)"],
-    "setback-subject-castDispute": ["{cast} has locked the trailer", "Creative differences (physical)", "{cast} would like a word. Several words."],
-    "setback-subject-location": ["The {location} is... unavailable", "Location problem. Big one.", "Re: the {location} (bring a poncho)"],
-    "setback-subject-equipment": ["The {equipment} is no more", "Equipment incident report", "So about the {equipment}..."],
-    "setback-open": ["I'll be direct, because the alternative is crying.", "First: everyone is fine. Second: nothing else is.", "You know how you said 'no surprises'? Funny story.", "Deep breath. Okay."],
-    "director-recall-reason": ["has taken a 'spiritual sabbatical' effective immediately", "was poached to reshoot someone else's disaster", "refuses to continue until the moon is 'right'", "is in a standoff with the completion bond company"],
-    "cast-incident": ["threw out a back doing a stunt everyone — including the chiropractor — advised against", "has stopped responding to any name except the character's", "got into a disagreement with a stunt coordinator and lost, physically", "is contractually refusing to exit the trailer until the hats are approved"],
-    "told-you-so": ["The cooperation number was right there in the file.", "I flagged this. I have the memo. I'll frame the memo.", "In their defense, we did know exactly who we were hiring."],
-    "location-problem": ["flooded. Biblically.", "now a protected nesting site for a bird with excellent lawyers", "double-booked with a yogurt commercial that outbid us", "condemned, which explains the price"],
-    "equipment-item": ["camera crane", "hero prop", "rain machine", "picture car", "animatronic double"],
-    "equipment-fate": ["at the bottom of the harbor", "on fire, then in the harbor", "sold by a PA who 'thought it was wrap'", "inside the load-bearing wall of the set"],
-    "producer-spin-penny-pincher": ["I can fix this cheap. Define 'fix'. Define 'this'.", "We lose two weeks or we lose the movie. Your call, but cheap."],
-    "producer-spin-prestige-producer": ["Frankly, the delay could deepen the material.", "Kurosawa had setbacks. I'm just saying."],
-    "producer-spin-steady-hand": ["It's bad but it's Tuesday-bad, not career-bad.", "I've seen worse. Once. It's on my resume."],
-    "producer-spin-hype-machine": ["Honestly? This LEAKS great. Chaos is press.", "We can spin this. We might not survive it, but we can spin it."],
-    "standings-quip-up": ["Somebody's been eating their vegetables", "The trades are calling it 'a pulse'", "Upward. Suspiciously upward."],
-    "standings-quip-flat": ["Holding steady, which is a word for it", "The line is horizontal. Like a patient.", "No news is... no news."],
-    "standings-quip-down": ["The line goes down, but with real artistic conviction", "Gravity remains undefeated", "We ran out of nice fonts for this one"],
-    "trade-observation": ["The number everyone's whispering about", "The town's favorite new cautionary tale", "What passes for a headline this week"],
-    "overtake-needle": ["{rival} sends their regards, presumably from above you.", "{rival} just walked past you on the chart and didn't wave."],
-    "news-verb-greenlight": ["greenlights", "bets the farm on", "quietly commits eight figures to"],
-    "news-verb-signing": ["signs", "locks down", "wins the bidding war for"],
-    "news-verb-release": ["opens", "unleashes", "finally releases"],
-    "analyst-take": ["Analysts call it 'a choice.'", "Rival execs describe the budget as 'brave.'", "Insiders say the pitch meeting involved a live animal."],
-    "poached-salt": ["You were, we're told, 'considering it.' They weren't.", "Their offer had a number in it. Yours had a vibe."],
-    "opening-verdict-hit": ["Lines around the block. Actual lines.", "The projections were wrong in the fun direction."],
-    "opening-verdict-ok": ["A respectable opening, which no one will remember.", "It made money. Champagne-adjacent beverages all around."],
-    "opening-verdict-flop": ["You could hear the projector echo.", "The ushers outnumbered the audience by Sunday."],
-    "news-closer": ["More as this develops, unfortunately.", "This has been the news. It keeps happening.", "Varietal Trade: first with what you'd rather not know."],
-    "review-open-5": ["A miracle in {runtime} minutes.", "Cancel your plans. All of them."],
-    "review-open-4": ["A confident, muscular piece of moviemaking.", "This is why we go to the theater."],
-    "review-open-3": ["A perfectly fine time at the movies, and I mean that with limited affection.", "It's a movie. It has scenes. Some are good."],
-    "review-open-2": ["A film that happens to you, like weather.", "Ambitions: high. Execution: also present."],
-    "review-open-1": ["I have seen things. This is now one of them.", "A bold experiment in testing an audience's love of air conditioning."],
-    "performance-verdict-great": ["delivers a career-best turn", "is incandescent, and knows it", "acts like rent is due, gloriously"],
-    "performance-verdict-fine": ["is present and audible throughout", "hits every mark, emotionally and literally", "does the job, which is a kind of art"],
-    "performance-verdict-poor": ["appears to be reading cue cards positioned behind our hearts", "gives a performance best described as 'attendance'", "was perhaps directed via a very long email"],
-    "review-close-5": ["See it twice. Bring someone you're trying to impress.", "Five stars. I don't say that. I just did."],
-    "review-close-4": ["Four stars, and I'm being stingy.", "The rare movie that earns its runtime."],
-    "review-close-3": ["Three stars. Wait for a rainy day.", "Fine. It's fine. Three stars of fine."],
-    "review-close-2": ["Two stars: one for the caterer, one for the exit signs.", "Save your money for the sequel they'll inexplicably make."],
-    "review-close-1": ["One star, awarded under protest.", "The parking was excellent."],
-    "meeting-request-subject-low": ["Coffee? (agenda: mild)", "Five minutes, no ambush", "Quick sync, the harmless kind"],
-    "meeting-request-subject-mid": ["We should talk this week", "Time-sensitive-ish", "Before this becomes A Thing"],
-    "meeting-request-subject-high": ["Today. Please.", "This can't be an email", "URGENT: and I don't use that word (I do)"],
-    "flop-epitaph": ["It tested well with the crew's families.", "The poster remains excellent.", "In twenty years, a podcast will defend it."],
-    "award-banter": ["And now, presenting an award they were nominated for twice and won never...", "The nominees have been asked to smile like it's an honor. Watch them try.", "This next category has ended three marriages and one production company."],
-    "board-open-warm": ["Good quarter. The pastries are real butter today.", "The board is, dare I say, pleased."],
-    "board-open-curt": ["Let's keep this efficient.", "The numbers are on the screen. So are we."],
-    "board-open-cold": ["Three members sent proxies. Read into that.", "No pastries. Note the absence of pastries."],
-    "board-open-hostile": ["The board has retained... advisors.", "Sit. Please. While it's still 'please.'"],
-    "exec-nag-cash": ["Runway's getting short. I can see the fence at the end of it.", "Cash is a movie studio's oxygen, and you're doing a lot of cardio."],
-    "exec-nag-production": ["That production is eating money like it's catered.", "I hear the dailies are great. I hear the daily COSTS more."],
-    "exec-nag-rival": ["{rival} is having a moment. The board reads the trades too.", "Every week {rival} opens something, the board asks me about you."],
-    "fan-question": ["Is this connected to the {franchise} universe?", "Will there be a scene after the credits, and is it legally binding?", "My question is more of a comment about my screenplay—", "Can you confirm the parrot is practical, not CGI?"],
-    "greenlight-congrats": ["The lot's buzzing. Mostly bees, but still.", "Champagne's on ice. The cheap shelf, but on ice."],
-    "screening-good": ["Cards came back strong. One person wrote 'MORE' in what we hope is ink.", "The room laughed where intended. Historic."],
-    "screening-mixed": ["Cards are... mixed. One just says 'why'.", "Half the room loved it. The other half were the first half's dates."],
-    "screening-bad": ["Three walkouts, and one was the projectionist.", "The cards used words we had to look up. They weren't compliments."],
-    "patience-tell-high": ["(They lean in. The folder inches toward you.)", "(They're doodling your studio logo on a napkin. Good sign.)", "(Their coffee sits forgotten. All eyes on you.)"],
-    "patience-tell-mid": ["(A polite nod. The folder stays where it is.)", "(They glance at their phone, then back. Still in the room.)", "(They refill their water. Buying time or staying hydrated. Unclear.)"],
-    "patience-tell-low": ["(They check their watch with their whole arm.)", "(The folder is slowly migrating back into their bag.)", "(They just said 'anyway' to nothing. Land the plane.)"],
-    "standup-free-producer": ["{producer} has nothing on their desk and keeps reorganizing it meaningfully.", "{producer}: \"My calendar is a desert. Feed me a project.\"", "{producer} is 'between pictures', which is producer for bored and dangerous."],
-    "standup-overloaded": ["{producer} is running {n} pictures and one visible eye twitch.", "{producer} answered 'which movie?' to a question about lunch.", "{producer} has {n} projects and has started numbering their sighs."],
+    "pitch-subject": [
+      "One word: {hook}",
+      "The {hook} thing. It's time.",
+      "I haven't slept. ({hook})",
+      "You're going to say no. Read it anyway.",
+      "This is the one. I mean it this time.",
+      "Cancel your afternoon. ({hook})",
+      "The {hook} idea. Sitting down?",
+      "I found it. THE one. ({hook})",
+      "Third act came to me in a car wash: {hook}",
+      "My agent said don't email you directly. Anyway: {hook}",
+      "{hook}. That's it. That's the subject line.",
+      "Re: re: re: the {hook} thing (please read this one)",
+      "You passed on two of these. Not this one. {hook}."
+    ],
+    "pitch-greeting-warm": [
+      "Boss! You beautiful gambler.",
+      "You magnificent risk-taker, listen:",
+      "I was saving this one for you.",
+      "You answered on the first ring once. I never forgot it.",
+      "My favorite yes-sayer. Statistically.",
+      "To the only desk in town with taste:"
+    ],
+    "pitch-greeting-neutral": [
+      "Boss —",
+      "Quick one:",
+      "Got a minute?",
+      "Per my last twelve emails:",
+      "Brief window, big idea:",
+      "Read fast, decide faster:"
+    ],
+    "pitch-greeting-cold": [
+      "I know you passed on my last three. Fine.",
+      "Against my agent's advice, here goes:",
+      "You owe me a read and you know why.",
+      "Let's skip the part where you apologize.",
+      "Our history aside — and it's a LOT of history —",
+      "New year, same grudge, better script:"
+    ],
+    "pitch-twist": [
+      "with a bigger boat",
+      "in space",
+      "but the dog lives",
+      "told backwards",
+      "with a Christmas setting for tax reasons",
+      "and the villain is the economy",
+      "except everyone's lying",
+      "but it's also a heist"
+    ],
+    "writer-signoff": [
+      "— written on a napkin, transcribed with love",
+      "— my landlord says hi",
+      "— awards bait? You decide. (It is.)",
+      "— I've already told my mother it's happening",
+      "— this email is my pitch meeting cardio"
+    ],
+    "setback-subject-directorRecall": [
+      "About {director}...",
+      "{director} has left the building",
+      "Director situation. Sitting down?"
+    ],
+    "setback-subject-castInjury": [
+      "About {cast}'s back...",
+      "{cast} + stunt = urgent care",
+      "Medical update from set (not great)"
+    ],
+    "setback-subject-castDispute": [
+      "{cast} has locked the trailer",
+      "Creative differences (physical)",
+      "{cast} would like a word. Several words."
+    ],
+    "setback-subject-location": [
+      "The {location} is... unavailable",
+      "Location problem. Big one.",
+      "Re: the {location} (bring a poncho)"
+    ],
+    "setback-subject-equipment": [
+      "The {equipment} is no more",
+      "Equipment incident report",
+      "So about the {equipment}..."
+    ],
+    "setback-open": [
+      "I'll be direct, because the alternative is crying.",
+      "First: everyone is fine. Second: nothing else is.",
+      "You know how you said 'no surprises'? Funny story.",
+      "Deep breath. Okay.",
+      "There are two kinds of phone calls in this business. This is the other kind.",
+      "You know that thing where everything goes fine? This is not an example of it.",
+      "I've prepared a compliment sandwich. We're out of bread.",
+      "Status report: the good news is on strike."
+    ],
+    "director-recall-reason": [
+      "has taken a 'spiritual sabbatical' effective immediately",
+      "was poached to reshoot someone else's disaster",
+      "refuses to continue until the moon is 'right'",
+      "is in a standoff with the completion bond company"
+    ],
+    "cast-incident": [
+      "threw out a back doing a stunt everyone — including the chiropractor — advised against",
+      "has stopped responding to any name except the character's",
+      "got into a disagreement with a stunt coordinator and lost, physically",
+      "is contractually refusing to exit the trailer until the hats are approved"
+    ],
+    "told-you-so": [
+      "The cooperation number was right there in the file.",
+      "I flagged this. I have the memo. I'll frame the memo.",
+      "In their defense, we did know exactly who we were hiring."
+    ],
+    "location-problem": [
+      "flooded. Biblically.",
+      "now a protected nesting site for a bird with excellent lawyers",
+      "double-booked with a yogurt commercial that outbid us",
+      "condemned, which explains the price"
+    ],
+    "equipment-item": [
+      "camera crane",
+      "hero prop",
+      "rain machine",
+      "picture car",
+      "animatronic double"
+    ],
+    "equipment-fate": [
+      "at the bottom of the harbor",
+      "on fire, then in the harbor",
+      "sold by a PA who 'thought it was wrap'",
+      "inside the load-bearing wall of the set"
+    ],
+    "producer-spin-penny-pincher": [
+      "I can fix this cheap. Define 'fix'. Define 'this'.",
+      "We lose two weeks or we lose the movie. Your call, but cheap."
+    ],
+    "producer-spin-prestige-producer": [
+      "Frankly, the delay could deepen the material.",
+      "Kurosawa had setbacks. I'm just saying."
+    ],
+    "producer-spin-steady-hand": [
+      "It's bad but it's Tuesday-bad, not career-bad.",
+      "I've seen worse. Once. It's on my resume."
+    ],
+    "producer-spin-hype-machine": [
+      "Honestly? This LEAKS great. Chaos is press.",
+      "We can spin this. We might not survive it, but we can spin it."
+    ],
+    "standings-quip-up": [
+      "Somebody's been eating their vegetables",
+      "The trades are calling it 'a pulse'",
+      "Upward. Suspiciously upward.",
+      "The arrow points UP, a direction we'd forgotten",
+      {
+        "t": "Awards season, and you're climbing — the knives come out engraved",
+        "tags": {
+          "season": "Fall"
+        }
+      },
+      {
+        "t": "A summer climb. Popcorn money is still money",
+        "tags": {
+          "season": "Summer"
+        }
+      },
+      "Somewhere a rival exec just asked for YOUR clippings"
+    ],
+    "standings-quip-flat": [
+      "Holding steady, which is a word for it",
+      "The line is horizontal. Like a patient.",
+      "No news is... no news.",
+      "Flat as a table read on a Monday",
+      "Steady. 'Steady' is what they write when nothing rhymes with 'stagnant'",
+      {
+        "t": "Holding through summer — treading water in a wave pool",
+        "tags": {
+          "season": "Summer"
+        }
+      }
+    ],
+    "standings-quip-down": [
+      "The line goes down, but with real artistic conviction",
+      "Gravity remains undefeated",
+      "We ran out of nice fonts for this one",
+      "Downward, with the grace of a piano leaving a window",
+      {
+        "t": "Sliding in awards season — the worst season to be humble in",
+        "tags": {
+          "season": "Fall"
+        }
+      },
+      {
+        "t": "A winter slide. At least the competition is hibernating",
+        "tags": {
+          "season": "Winter"
+        }
+      },
+      "The chart reads like a ski slope. Point your knees."
+    ],
+    "trade-observation": [
+      "The number everyone's whispering about",
+      "The town's favorite new cautionary tale",
+      "What passes for a headline this week",
+      "The number your rivals read twice",
+      "This week's arithmetic, boffo and otherwise",
+      "The town's Monday math",
+      "What the helmer class is whispering about",
+      "Grosses, egos, and other fluctuating assets"
+    ],
+    "overtake-needle": [
+      "{rival} sends their regards, presumably from above you.",
+      "{rival} just walked past you on the chart and didn't wave."
+    ],
+    "news-verb-greenlight": [
+      "greenlights",
+      "bets the farm on",
+      "quietly commits eight figures to"
+    ],
+    "news-verb-signing": [
+      "signs",
+      "locks down",
+      "wins the bidding war for"
+    ],
+    "news-verb-release": [
+      "opens",
+      "unleashes",
+      "finally releases"
+    ],
+    "analyst-take": [
+      "Analysts call it 'a choice.'",
+      "Rival execs describe the budget as 'brave.'",
+      "Insiders say the pitch meeting involved a live animal."
+    ],
+    "poached-salt": [
+      "You were, we're told, 'considering it.' They weren't.",
+      "Their offer had a number in it. Yours had a vibe."
+    ],
+    "opening-verdict-hit": [
+      "Lines around the block. Actual lines.",
+      "The projections were wrong in the fun direction."
+    ],
+    "opening-verdict-ok": [
+      "A respectable opening, which no one will remember.",
+      "It made money. Champagne-adjacent beverages all around."
+    ],
+    "opening-verdict-flop": [
+      "You could hear the projector echo.",
+      "The ushers outnumbered the audience by Sunday."
+    ],
+    "news-closer": [
+      "More as this develops, unfortunately.",
+      "This has been the news. It keeps happening.",
+      "Varietal Trade: first with what you'd rather not know.",
+      "Filed from a lunch that ran long.",
+      "Denials expected by Thursday.",
+      "This reporter owns no stock in any studio. This reporter owns very little.",
+      "Corrections, if any, will be printed smaller.",
+      "The popcorn, as ever, is complicit."
+    ],
+    "review-open-5": [
+      "A miracle in {runtime} minutes.",
+      "Cancel your plans. All of them.",
+      "Drop everything. Yes, that too.",
+      "A picture that forgives the whole industry."
+    ],
+    "review-open-4": [
+      "A confident, muscular piece of moviemaking.",
+      "This is why we go to the theater.",
+      "Sturdy, handsome, and smarter than it needs to be.",
+      "The rare crowd-pleaser that respects the crowd."
+    ],
+    "review-open-3": [
+      "A perfectly fine time at the movies, and I mean that with limited affection.",
+      "It's a movie. It has scenes. Some are good.",
+      "Perfectly adequate, aggressively so.",
+      "It exists, and on a rainy day that's plenty."
+    ],
+    "review-open-2": [
+      "A film that happens to you, like weather.",
+      "Ambitions: high. Execution: also present.",
+      "A rough draft wearing a premiere suit.",
+      "The trailer was honest. Fair warning was given."
+    ],
+    "review-open-1": [
+      "I have seen things. This is now one of them.",
+      "A bold experiment in testing an audience's love of air conditioning.",
+      "A bold argument for reading books.",
+      "I checked my watch so often it filed a complaint."
+    ],
+    "performance-verdict-great": [
+      "delivers a career-best turn",
+      "is incandescent, and knows it",
+      "acts like rent is due, gloriously"
+    ],
+    "performance-verdict-fine": [
+      "is present and audible throughout",
+      "hits every mark, emotionally and literally",
+      "does the job, which is a kind of art"
+    ],
+    "performance-verdict-poor": [
+      "appears to be reading cue cards positioned behind our hearts",
+      "gives a performance best described as 'attendance'",
+      "was perhaps directed via a very long email"
+    ],
+    "review-close-5": [
+      "See it twice. Bring someone you're trying to impress.",
+      "Five stars. I don't say that. I just did.",
+      "The projectionist applauded. The PROJECTIONIST.",
+      "Five stars, and I want my colleagues to know I resent this."
+    ],
+    "review-close-4": [
+      "Four stars, and I'm being stingy.",
+      "The rare movie that earns its runtime.",
+      "Four stars — the missing one is a personal grudge.",
+      "Bring a date. Keep the date."
+    ],
+    "review-close-3": [
+      "Three stars. Wait for a rainy day.",
+      "Fine. It's fine. Three stars of fine.",
+      "Three stars, no hard feelings.",
+      "Matinee it. You'll thank me at dinner."
+    ],
+    "review-close-2": [
+      "Two stars: one for the caterer, one for the exit signs.",
+      "Save your money for the sequel they'll inexplicably make.",
+      "Two stars: the score tried, the lighting tried.",
+      "Wait for the airplane cut."
+    ],
+    "review-close-1": [
+      "One star, awarded under protest.",
+      "The parking was excellent.",
+      "One star, and the star is for ending.",
+      "The exit signs deserve billing."
+    ],
+    "meeting-request-subject-low": [
+      "Coffee? (agenda: mild)",
+      "Five minutes, no ambush",
+      "Quick sync, the harmless kind"
+    ],
+    "meeting-request-subject-mid": [
+      "We should talk this week",
+      "Time-sensitive-ish",
+      "Before this becomes A Thing"
+    ],
+    "meeting-request-subject-high": [
+      "Today. Please.",
+      "This can't be an email",
+      "URGENT: and I don't use that word (I do)"
+    ],
+    "flop-epitaph": [
+      "It tested well with the crew's families.",
+      "The poster remains excellent.",
+      "In twenty years, a podcast will defend it."
+    ],
+    "award-banter": [
+      "And now, presenting an award they were nominated for twice and won never...",
+      "The nominees have been asked to smile like it's an honor. Watch them try.",
+      "This next category has ended three marriages and one production company.",
+      "Our next presenter needs no introduction, which is lucky, because none was written.",
+      "Tonight's gift bags contain hope and a candle. The candle is scented with hope.",
+      "The orchestra has been instructed to play off anyone who thanks 'the journey.'",
+      "This category was decided by people. Remember that. People."
+    ],
+    "board-open-warm": [
+      "Good quarter. The pastries are real butter today.",
+      "The board is, dare I say, pleased.",
+      "The chairman brought his OWN pastries to share. Unprecedented.",
+      "Someone said your name upstairs and nobody flinched."
+    ],
+    "board-open-curt": [
+      "Let's keep this efficient.",
+      "The numbers are on the screen. So are we.",
+      "Agenda's one line long. You're the line.",
+      "The minutes will be brief. Be briefer."
+    ],
+    "board-open-cold": [
+      "Three members sent proxies. Read into that.",
+      "No pastries. Note the absence of pastries.",
+      "The thermostat is fine. It's not the thermostat.",
+      "Your slide deck was pre-read. That's never good."
+    ],
+    "board-open-hostile": [
+      "The board has retained... advisors.",
+      "Sit. Please. While it's still 'please.'",
+      "Legal is here. Legal says hello.",
+      "There's a new nameplate in the hall. It's blank. For now."
+    ],
+    "exec-nag-cash": [
+      "Runway's getting short. I can see the fence at the end of it.",
+      "Cash is a movie studio's oxygen, and you're doing a lot of cardio.",
+      "The runway has a fence, and the fence has your name on it.",
+      "Cash-wise, we're a documentary about cash."
+    ],
+    "exec-nag-production": [
+      "That production is eating money like it's catered.",
+      "I hear the dailies are great. I hear the daily COSTS more.",
+      "That shoot is eating like it's nominated.",
+      "The dailies cost more than the dailies are worth. Daily."
+    ],
+    "exec-nag-rival": [
+      "{rival} is having a moment. The board reads the trades too.",
+      "Every week {rival} opens something, the board asks me about you.",
+      "{rival} bought a billboard across from our lot. It says 'thinking of you.'",
+      "The board keeps a {rival} folder now. It's thicker than ours."
+    ],
+    "fan-question": [
+      "Is this connected to the {franchise} universe?",
+      "Will there be a scene after the credits, and is it legally binding?",
+      "My question is more of a comment about my screenplay—",
+      "Can you confirm the parrot is practical, not CGI?"
+    ],
+    "greenlight-congrats": [
+      "The lot's buzzing. Mostly bees, but still.",
+      "Champagne's on ice. The cheap shelf, but on ice."
+    ],
+    "screening-good": [
+      "Cards came back strong. One person wrote 'MORE' in what we hope is ink.",
+      "The room laughed where intended. Historic."
+    ],
+    "screening-mixed": [
+      "Cards are... mixed. One just says 'why'.",
+      "Half the room loved it. The other half were the first half's dates."
+    ],
+    "screening-bad": [
+      "Three walkouts, and one was the projectionist.",
+      "The cards used words we had to look up. They weren't compliments."
+    ],
+    "patience-tell-high": [
+      "(They lean in. The folder inches toward you.)",
+      "(They're doodling your studio logo on a napkin. Good sign.)",
+      "(Their coffee sits forgotten. All eyes on you.)"
+    ],
+    "patience-tell-mid": [
+      "(A polite nod. The folder stays where it is.)",
+      "(They glance at their phone, then back. Still in the room.)",
+      "(They refill their water. Buying time or staying hydrated. Unclear.)"
+    ],
+    "patience-tell-low": [
+      "(They check their watch with their whole arm.)",
+      "(The folder is slowly migrating back into their bag.)",
+      "(They just said 'anyway' to nothing. Land the plane.)"
+    ],
+    "standup-free-producer": [
+      "{producer} has nothing on their desk and keeps reorganizing it meaningfully.",
+      "{producer}: \"My calendar is a desert. Feed me a project.\"",
+      "{producer} is 'between pictures', which is producer for bored and dangerous."
+    ],
+    "standup-overloaded": [
+      "{producer} is running {n} pictures and one visible eye twitch.",
+      "{producer} answered 'which movie?' to a question about lunch.",
+      "{producer} has {n} projects and has started numbering their sighs."
+    ],
     "pitch-frame": [
       "{greeting} {title} — {genre}, {logline}.",
       "{greeting} Picture this: {logline}. I'm calling it {title}. {genre}. You're welcome.",
       "{greeting} Three words: {title}. Okay, that's {titleWords} words, but listen — {logline}. Pure {genre}.",
       "{greeting} I woke up at 4am and wrote {title} in one sitting. {genre}. {logline}. My hand still hurts.",
-      "{greeting} The elevator version: {logline}. Title: {title}. Genre: {genre}. Floor: yours."
+      "{greeting} The elevator version: {logline}. Title: {title}. Genre: {genre}. Floor: yours.",
+      "{greeting} Okay. Lights down. Curtain up: {logline}. I call it {title}. {genre}. Breathe.",
+      "{greeting} {title}. {genre}. {logline}. I've said it out loud to three people and one wept.",
+      "{greeting} Forget everything on your desk. {logline} — that's {title}, it's {genre}, and it's ready.",
+      "{greeting} What if I told you: {logline}? Because that's {title} ({genre}) and I'm telling you.",
+      "{greeting} The trades will call {title} 'a {genre} triumph.' I've pre-written their copy. {logline}."
     ],
     "pitch-close": [
       "I'm shopping it around in two weeks either way.",
       "My agent says {rival} wants a look. My agent lies, but not always.",
       "This one's got legs. Possibly a tail. Read it.",
-      "If you pass, fine — but I'm naming a villain after you."
+      "If you pass, fine — but I'm naming a villain after you.",
+      "Two other desks see this Friday. Yours saw it first. That means something. Make it mean something.",
+      "The window on this is a cat door. Move.",
+      "I'd take this to my grave, but my grave doesn't greenlight pictures.",
+      "Sleep on it. Once. It's a one-sleep offer.",
+      "This is the call you tell the documentary about."
     ],
     "diva-demand": [
       "{name} now refers to the script as 'the suggestion document.'",
       "{name} wants the character renamed after their yacht.",
       "{name} is demanding final say on the poster font. There is a mood board.",
       "{name} would like their trailer moved 'somewhere with better light, spiritually.'",
-      "{name} has requested the ending be reshot so their character 'wins more.'"
+      "{name} has requested the ending be reshot so their character 'wins more.'",
+      "{name} insists their character 'would never use doors.' Rewrites pending.",
+      "{name} has hired a personal historian. For the shoot. To record it.",
+      "{name} wants their trailer relocated 'away from the sound of ambition.'"
     ],
-    "mandate-issued": ["The board has a NOTE, and the note is law:", "From the top floor, with love and a deadline:", "New directive. The board voted. You weren't invited:"],
+    "mandate-issued": [
+      "The board has a NOTE, and the note is law:",
+      "From the top floor, with love and a deadline:",
+      "New directive. The board voted. You weren't invited:"
+    ],
     "lunch-gossip": [
       "\"{rival} is bleeding money on that {genre} thing. Everyone knows. Nobody says.\"",
       "\"Word is {genre} testing through the roof this season. You didn't hear it from me.\"",
       "\"{name} is unhappy over at {rival}. A phone call away, is all I'm saying.\"",
-      "\"They reshot the ending twice. TWICE. The bond company is circling.\""
+      "\"They reshot the ending twice. TWICE. The bond company is circling.\"",
+      "\"Two words: budget. Overrun. Fine, that's three words at {rival}.\"",
+      "\"{name}'s trailer demands now include a second trailer. For the first trailer.\"",
+      "\"The {genre} bubble? Pop. You heard the pop here.\""
     ],
     "regret-salt": [
       "You had this on your desk. The desk remembers.",
@@ -108,14 +504,32 @@
       "The carpet is red, the smiles are white, the knives are out.",
       "A journalist asks how you're feeling. You are legally required to say 'excited.'"
     ],
-    "premiere-crowd-good": ["They GASPED at the midpoint. A real gasp. You bottled lightning.", "Applause at the title card. That's rare. That's money."],
-    "premiere-crowd-mixed": ["Laughter in some right places. Also some wrong ones.", "The audience is polite. Polite is a four-letter word in this town."],
-    "premiere-crowd-bad": ["Row F is on their phones. Row G is asleep. Row H left.", "The silence has texture. You will remember this silence."],
+    "premiere-crowd-good": [
+      "They GASPED at the midpoint. A real gasp. You bottled lightning.",
+      "Applause at the title card. That's rare. That's money."
+    ],
+    "premiere-crowd-mixed": [
+      "Laughter in some right places. Also some wrong ones.",
+      "The audience is polite. Polite is a four-letter word in this town."
+    ],
+    "premiere-crowd-bad": [
+      "Row F is on their phones. Row G is asleep. Row H left.",
+      "The silence has texture. You will remember this silence."
+    ],
     "agent-package": [
       "\"One more thing — {star} comes with {extra}. It's a package. Like a gift basket, if gift baskets billed by the hour.\"",
       "\"You want {star}? Wonderful. You also want {extra}. You just don't know it yet. It's a package.\""
     ],
-    "festival-banter": ["The air smells of pine and desperation.", "Every buyer here has a parka and a checkbook. You have both.", "A director just cried on a panel. Bidding doubled."]
+    "festival-banter": [
+      "The air smells of pine and desperation.",
+      "Every buyer here has a parka and a checkbook. You have both.",
+      "A director just cried on a panel. Bidding doubled."
+    ]
   },
-  "toneTiers": ["warm", "curt", "cold", "hostile"]
+  "toneTiers": [
+    "warm",
+    "curt",
+    "cold",
+    "hostile"
+  ]
 }

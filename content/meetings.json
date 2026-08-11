@@ -1,4 +1,53 @@
 {
+  "gsbt": {
+    "greetingResponses": [
+      { "id": "greet_match", "line": "Read the room and match their energy." },
+      { "id": "greet_warm", "line": "Big welcome — coffee, the good chair, the works." },
+      { "id": "greet_business", "line": "Skip the pleasantries. Respect their time." }
+    ],
+    "schmooze": [
+      { "id": "sch_flatter", "line": "Flatter the work — name the exact thing only a fan would know." },
+      { "id": "sch_joke", "line": "Risk the joke. The one about the studio head and the parrot." },
+      { "id": "sch_gossip", "line": "Trade a little gossip. Lean in.", "requires": "intel" },
+      { "id": "toBusiness", "line": "Down to business." }
+    ],
+    "schmoozeMatrix": {
+      "method-perfectionist": { "sch_flatter": 10, "sch_joke": -8, "sch_gossip": 2 },
+      "bankable-star": { "sch_flatter": 8, "sch_joke": 5, "sch_gossip": 4 },
+      "workhorse": { "sch_flatter": 4, "sch_joke": 7, "sch_gossip": 2 },
+      "loose-cannon": { "sch_flatter": 2, "sch_joke": 10, "sch_gossip": 6 },
+      "rising-talent": { "sch_flatter": 9, "sch_joke": 4, "sch_gossip": -2 },
+      "faded-legend": { "sch_flatter": 10, "sch_joke": -4, "sch_gossip": 5 },
+      "genre-specialist": { "sch_flatter": 8, "sch_joke": 3, "sch_gossip": 2 },
+      "chameleon": { "sch_flatter": 5, "sch_joke": 6, "sch_gossip": 4 },
+      "prestige-pen": { "sch_flatter": 9, "sch_joke": -5, "sch_gossip": 3 },
+      "pulp-factory": { "sch_flatter": 3, "sch_joke": 8, "sch_gossip": 5 },
+      "auteur": { "sch_flatter": 9, "sch_joke": -6, "sch_gossip": 2 },
+      "blockbuster-machine": { "sch_flatter": 5, "sch_joke": 6, "sch_gossip": 4 },
+      "journeyman": { "sch_flatter": 5, "sch_joke": 6, "sch_gossip": 3 },
+      "chaos-visionary": { "sch_flatter": 3, "sch_joke": 9, "sch_gossip": 7 },
+      "indie-darling": { "sch_flatter": 8, "sch_joke": 4, "sch_gossip": -3 },
+      "default": { "sch_flatter": 6, "sch_joke": 4, "sch_gossip": 3 }
+    },
+    "flatterHits": [
+      "You mention the tracking shot everyone else missed. Their whole posture changes.",
+      "You quote their own line back to them. Word for word. They pretend not to be moved. They are moved.",
+      "You name the exact scene. 'Nobody remembers that scene.' You do."
+    ],
+    "flatterMisses": [
+      "You reach for a specific and grab a cliché. They clock it instantly.",
+      "Wrong credit. WRONG CREDIT. The temperature drops four degrees."
+    ],
+    "jokeHits": ["The laugh is real — the undignified kind. You're in.", "They repeat the punchline to themselves. It's theirs now. Fine."],
+    "jokeMisses": ["The joke dies between the water glasses. It had a family.", "'Funny.' Delivered like a subpoena."],
+    "gossipHits": ["Their eyes go wide. 'You did NOT hear that from me.' Bond: formed.", "They pay you back with a detail about the studio across town. Interest accrued."],
+    "overSchmooze": ["Their smile plateaus. You've been charming for one beat too long.", "'You're very good at this,' they say, meaning stop."],
+    "interruptions": [
+      "Your phone detonates against the table. It's the set — something about {topic}.",
+      "Your assistant's head appears in the doorway wearing an apology. The {topic} thing. It's now."
+    ],
+    "interruptTopics": ["a generator fire", "a missing picture car", "two agents in one elevator", "the insurance auditor", "a very specific parrot"]
+  },
   "pitch": {
     "scene": "meetingRoom",
     "title": "Pitch Meeting",
