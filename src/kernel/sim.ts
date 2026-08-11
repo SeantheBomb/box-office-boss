@@ -405,7 +405,7 @@ export class Sim {
     m.phaseEnd = this.state.day + totalDays;
     m.budget = Math.round(pitch.minBudget * (0.9 + rng.next() * 0.4));
     m.dailyCost = Math.round((m.budget * this.content.economy.production.baseDailyCostFactor) / 1000) * 1000;
-    this.spend(si, m.budget * 0.4);
+    this.spend(si, m.budget * 0.2); // greenlight lump; dailies cover the rest of the shoot
     this.addEvent(m.phaseEnd, "afternoon", "outcome", "rivalWrap", { movieId: m.id });
     // news for the player — every rival move is a lesson
     const stolen = m.castIds.some((c) => this.state.flags[`playerWanted_${c}`]);
@@ -742,7 +742,7 @@ export class Sim {
     m.actualVfx = m.estVfx;
     m.hype = 30 + rng.int(0, 40);
     m.phase = "post";
-    this.spend(m.studio, m.budget * 0.3 + 3000000); // remaining production + a standard campaign
+    this.spend(m.studio, m.budget * 0.1 + 3000000); // finishing costs + a standard campaign
     const releaseIn = 21 + rng.int(0, 21);
     this.addEvent(this.state.day + releaseIn, "morning", "outcome", "release", { movieId: m.id, marketingTier: "standard" });
     for (const cid of [...m.castIds, m.directorId].filter(Boolean) as string[]) {
