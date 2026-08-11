@@ -45,28 +45,46 @@ export class MeetingSession {
   }
 
   // ---------- pitch ----------
+  // Ask as many probes as you like — each wears the writer's HIDDEN patience. You read it
+  // from the parenthetical tells. A worn-out writer can reject even a full-price offer.
   start_pitch(): Beat {
     const writer = this.sim.person(this.event.data.writerId)!;
     const p = this.event.data.pitch;
     this.data.writer = writer;
+    const rng = this.sim.rng.get("meetings");
+    this.data.patience = 55 + writer.relationship / 2 + rng.int(-10, 10);
+    this.data.asked = [] as string[];
     return {
       speaker: writer.name,
       portraitId: writer.id,
       text: `*slides a one-sheet across the table* "${p.title}." ${p.genre}/${p.subgenre}, ${p.estRating}. ${p.logline}. Cost to greenlight a script: ${money(
         p.minBudget * this.content.economy.phases.greenlightScriptFactor
       )}.`,
-      choices: [
-        ...(this.M.probes as any[]).map((pr) => ({ id: `probe_${pr.id}`, line: pr.line })),
-        ...(this.M.positions as any[]).map((po) => ({ id: `pos_${po.id}`, line: po.line })),
-      ],
+      choices: this.pitchChoices(),
     };
+  }
+
+  private pitchChoices() {
+    return [
+      ...(this.M.probes as any[]).filter((pr) => !this.data.asked.includes(pr.id)).map((pr) => ({ id: `probe_${pr.id}`, line: pr.line })),
+      ...(this.M.positions as any[]).map((po) => ({ id: `pos_${po.id}`, line: po.line })),
+    ];
+  }
+
+  private patienceTell(): string {
+    const p = this.data.patience;
+    const bank = p > 55 ? "patience-tell-high" : p > 30 ? "patience-tell-mid" : "patience-tell-low";
+    return bankLine(this.dlg(), this.content, bank);
   }
 
   choose_pitch(choiceId: string): Beat {
     const writer: Person = this.data.writer;
     const p = this.event.data.pitch;
+    const rng = this.sim.rng.get("meetings");
     if (choiceId.startsWith("probe_")) {
       const probe = (this.M.probes as any[]).find((x) => `probe_${x.id}` === choiceId)!;
+      this.data.asked.push(probe.id);
+      this.data.patience -= rng.int(8, 18);
       let reveal = "";
       if (probe.reveals === "idealDirector") {
         const d = this.sim.person(p.idealDirectorId);
@@ -75,27 +93,31 @@ export class MeetingSession {
           : `"Honestly? Whoever answers the phone."`;
       } else if (probe.reveals === "fadStatus") {
         const heat = this.sim.state.audience.fads[p.genre] ?? 1;
-        reveal = heat > 1.2 ? `"${p.genre} is scorching right now. Which means everyone's making one. Speed matters."` : heat < 0.8 ? `"${p.genre}'s cold, which means the field is EMPTY. Contrarian money."` : `"${p.genre}'s steady. No fad, no saturation. Boring, dependable money."`;
+        const rivalCount = this.sim.state.movies.filter((m) => m.studio !== 0 && m.genre === p.genre && ["production", "post", "prepro"].includes(m.phase)).length;
+        reveal = heat > 1.2 ? `"${p.genre} is scorching. ${rivalCount ? `${rivalCount} rival production${rivalCount > 1 ? "s" : ""} already shooting one — speed matters.` : "And somehow nobody's shooting one yet. Window's open."}"` : heat < 0.8 ? `"${p.genre}'s cold, which means the field is EMPTY. Contrarian money."` : `"${p.genre}'s steady. No fad, no saturation. Boring, dependable money."`;
+      } else if (probe.reveals === "revenue") {
+        reveal = `"Comparable pictures do ${money(this.sim.estimateRevenue(p.minBudget, p.genre))} against a ${money(p.minBudget)} budget. Conservatively. I'm being conservative."`;
+      } else if (probe.reveals === "timeline") {
+        const d = this.sim.person(p.idealDirectorId);
+        const weeks = Math.round(((d?.avgLocations ?? 5) * this.content.economy.production.baseDaysPerLocation + this.content.economy.post.baseDays + 60) / 7);
+        reveal = `"Script to screen? ${weeks} weeks if nothing goes wrong. Something always goes wrong, so call it ${weeks + 6}."`;
       } else {
         reveal = `"${p.logline}. But underneath? It's about my divorce."`;
       }
       return {
         speaker: writer.name,
         portraitId: writer.id,
-        text: reveal,
-        choices: (this.M.positions as any[]).map((po) => ({ id: `pos_${po.id}`, line: po.line })),
+        text: `${reveal}\n${this.patienceTell()}`,
+        choices: this.pitchChoices(),
       };
     }
     const pos = (this.M.positions as any[]).find((x) => `pos_${x.id}` === choiceId)!;
     writer.relationship += pos.writerMood;
     if (pos.id === "greenlight" || pos.id === "cheap") {
-      // their decision: cheap deal can be countered or walked
-      const rng = this.sim.rng.get("meetings");
-      let accepted = true;
-      if (pos.id === "cheap") {
-        const odds = 0.45 + writer.relationship / 200 + (writer.archetype === "pulp-factory" ? 0.2 : 0);
-        accepted = rng.chance(Math.max(0.15, Math.min(0.9, odds)));
-      }
+      // their decision weighs the offer, the relationship, and how the meeting went
+      const base = pos.id === "greenlight" ? 0.85 : 0.45;
+      const odds = base + writer.relationship / 200 + (this.data.patience - 50) / 180 + (writer.archetype === "pulp-factory" ? 0.1 : 0);
+      const accepted = rng.chance(Math.max(0.1, Math.min(0.97, odds)));
       if (accepted) {
         const m = this.sim.createMovie(0, writer, p);
         (m as any).idealDirectorId = p.idealDirectorId;
@@ -111,7 +133,7 @@ export class MeetingSession {
       return {
         speaker: writer.name,
         portraitId: writer.id,
-        text: fill(this.dlg().pick(this.M.reactions.walk as string[]), { writer: writer.name }),
+        text: `${fill(this.dlg().pick(this.M.reactions.walk as string[]), { writer: writer.name })}\n(The meeting ran long. They were gone before you finished the offer.)`,
         done: true,
       };
     }
@@ -260,6 +282,9 @@ export class MeetingSession {
     this.data.kind = kind;
     const cast = this.sim.person(movie.castIds[0]);
     const problems = this.M.problems as Record<string, string>;
+    const askCost = Math.round(movie.budget * 0.05);
+    const splitCost = Math.round(movie.budget * 0.025);
+    this.data.askCost = askCost;
     const text = fill(problems[kind], {
       days: rng.int(3, 12),
       cost: money(movie.dailyCost * 7),
@@ -269,10 +294,22 @@ export class MeetingSession {
       shots: rng.int(20, 60),
       trust: rng.int(2, 9),
     });
+    const stakes: Record<string, string> = {
+      behind: "THE ASK: more time.",
+      over: "THE ASK: a bigger budget.",
+      friction: "THE ASK: you pick a side, or at least a referee.",
+      scope: "THE ASK: more VFX shots.",
+    };
     return {
       speaker: director?.name ?? "The Director",
       portraitId: director?.id,
-      text: `*walks you through the set of ${movie.title}* "${text}"`,
+      text:
+        `*walks you through the set of ${movie.title}* "${text}"\n\n` +
+        `${stakes[kind]}\n` +
+        `— Give them what they want: +${money(askCost)} to the budget, quality and morale up.\n` +
+        `— Hold the line: free, but risks a setback if the set turns on you.\n` +
+        `— Split the difference: +${money(splitCost)}, keeps the peace, no upside.\n` +
+        `— Threaten the schedule: free, can pull the wrap date IN — or blow up in your face.`,
       choices: (this.M.plays as any[]).map((p) => ({ id: p.id, line: p.line })),
     };
   }
@@ -467,49 +504,67 @@ export class MeetingSession {
   }
 
   // ---------- producers standup ----------
+  // Weekly. Each producer reports their own slate: phase, days to next milestone, burn,
+  // and flags. Flagged projects offer a concrete fix (cost stated) or you let it ride.
   start_producersStandup(): Beat {
-    const active = this.sim.state.movies.filter((m) => m.studio === 0 && ["prepro", "production", "post"].includes(m.phase));
-    if (!active.length) return { speaker: "Producers", text: "Nothing's shooting. The producers drink your coffee and leave.", done: true };
-    this.data.active = active;
-    const lines = active.map((m) => {
-      const tier = m.setbackCount >= 2 ? "bad" : m.setbackCount === 1 ? "warn" : "fine";
-      const cast = this.sim.person(m.castIds[0]);
-      return "• " + fill(this.dlg().pick(this.M.statusLines[tier] as string[]), { title: m.title, cast: cast?.name ?? "the lead" });
-    });
+    const staff = this.sim.staffProducers();
+    if (!staff.length) return { speaker: "Empty Room", text: "You have no producers on staff. That is a problem with a hiring-shaped solution.", done: true };
+    const day = this.sim.state.day;
+    const sections: string[] = [];
+    const flagged: Movie[] = [];
+    for (const prod of staff) {
+      const slate = this.sim.state.movies.filter((m) => m.producerId === prod.id && ["prepro", "production", "post"].includes(m.phase));
+      if (!slate.length) {
+        sections.push(fill(bankLine(this.dlg(), this.content, "standup-free-producer"), { producer: prod.name }));
+        continue;
+      }
+      const over = slate.length > this.content.economy.producers.idealLoad;
+      const head = over
+        ? fill(bankLine(this.dlg(), this.content, "standup-overloaded"), { producer: prod.name, n: slate.length })
+        : `${prod.name} (${slate.length} project${slate.length > 1 ? "s" : ""}):`;
+      const lines = slate.map((m) => {
+        const daysLeft = Math.max(0, m.phaseEnd - day);
+        const milestone = m.phase === "prepro" ? "pre-pro wrap" : m.phase === "production" ? "picture wrap" : "final cut";
+        const flags = m.setbackCount > 0 ? ` ⚠ ${m.setbackCount} setback${m.setbackCount > 1 ? "s" : ""}` : "";
+        if (m.setbackCount > 0 && m.phase === "production") flagged.push(m);
+        return `   • ${m.title}: ${m.phase.toUpperCase()}, ${daysLeft}d to ${milestone}, burning ${money(m.dailyCost)}/day${flags}`;
+      });
+      sections.push([head, ...lines].join("\n"));
+    }
+    this.data.flagged = flagged;
+    const choices = flagged.map((m) => ({
+      id: `fix_${m.id}`,
+      line: `Throw money at ${m.title} (${money(Math.round(m.budget * 0.025))} — clears a setback, claws back 3 days)`,
+    }));
+    choices.push({ id: "ride", line: flagged.length ? "Let it all ride. Setbacks build character." : "Good. Back to work, all of you." });
     return {
-      speaker: "Your Producers",
+      speaker: "Producers Standup",
       portraitId: "producers",
-      text: `Round the room:\n${lines.join("\n")}\n\nOne gets priority this month. Which?`,
-      choices: active.map((m) => ({ id: m.id, line: `${m.title} — ${(this.M.priorities as any[]).map((p) => p.label).join(" / ")}` })),
+      text: sections.join("\n\n"),
+      choices,
     };
   }
 
   choose_producersStandup(choiceId: string): Beat {
-    const m = this.sim.movie(choiceId);
-    if (!m) return { speaker: "Your Producers", text: "Noted. Vaguely.", done: true };
-    const producer = this.sim.person(m.producerId);
-    // producer profile decides which buff you get
-    const arch = producer?.archetype ?? "steady-hand";
-    let effect: string;
-    if (arch === "penny-pincher") {
-      m.dailyCost = Math.round(m.dailyCost * 0.85);
-      effect = "burn trimmed 15%";
-    } else if (arch === "prestige-producer") {
-      m.quality.polish = Math.min(100, m.quality.polish + 6);
-      effect = "quality bought";
-    } else if (arch === "hype-machine") {
-      m.hype = Math.min(100, m.hype + 8);
-      effect = "hype stoked";
-    } else {
-      const wrap = this.sim.state.events.find((e) => (e.type === "productionWrap" || e.type === "vfxDone") && e.data.movieId === m.id);
-      if (wrap) wrap.day = Math.max(this.sim.state.day + 2, wrap.day - 3);
-      effect = "schedule protected";
+    if (choiceId.startsWith("fix_")) {
+      const m = this.sim.movie(choiceId.slice(4));
+      if (m) {
+        const cost = Math.round(m.budget * 0.025);
+        this.sim.spend(0, cost);
+        m.spent += cost;
+        m.setbackCount = Math.max(0, m.setbackCount - 1);
+        const wrap = this.sim.state.events.find((e) => (e.type === "productionWrap" || e.type === "vfxDone") && e.data.movieId === m.id);
+        if (wrap) wrap.day = Math.max(this.sim.state.day + 2, wrap.day - 3);
+        m.phaseEnd = Math.max(this.sim.state.day + 2, m.phaseEnd - 3);
+        const producer = this.sim.person(m.producerId);
+        return {
+          speaker: producer?.name ?? "Producer",
+          portraitId: producer?.id,
+          text: `"Consider it handled." (${m.title}: setback cleared, schedule pulled in 3 days, ${money(cost)} lighter.)`,
+          done: true,
+        };
+      }
     }
-    return {
-      speaker: producer?.name ?? "Your Producers",
-      portraitId: producer?.id,
-      text: `"Consider it handled." (${m.title}: ${effect}.)`,
-      done: true,
-    };
+    return { speaker: "Producers Standup", portraitId: "producers", text: "Coffee cups clatter. Everyone scatters to their sets.", done: true };
   }
 }

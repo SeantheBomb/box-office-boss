@@ -67,6 +67,7 @@ export class Sim {
       history: [],
       totalRevenue: 0,
       totalSpent: 0,
+      reportedSpend: 0,
     });
     state.studios.push(mkStudio(content.game.studioName, true));
     for (const rn of content.people.nameBanks.rivalStudios as string[]) {
@@ -75,12 +76,46 @@ export class Sim {
       s.persona = world.pick(["aggressive", "prestige", "cheap", "franchise", "chaotic"]);
       state.studios.push(s);
     }
+    // your starting producer staff
+    const producers = state.people.filter((p) => p.role === "producer");
+    for (const p of producers.slice(0, content.economy.producers.startingRoster)) p.signedByStudio = 0;
     // seed the writer pitch flywheel
     for (const w of state.people.filter((p) => p.role === "writer")) {
-      sim.scheduleWriterPitch(w, world.int(2, 20));
+      sim.scheduleWriterPitch(w, world.int(2, 30));
     }
-    sim.welcomeEmail();
+    sim.addEvent(sim.weekday(world.int(20, 40)), "morning", "outcome", "producerOffer", {});
     return sim;
+  }
+
+  /** Next weekday (MON-FRI) at or after `day`. Meetings and player-facing mail land on weekdays only. */
+  weekday(day: number): number {
+    while (calDate(day).dayOfWeek >= 5) day++;
+    return day;
+  }
+
+  bookMeeting(earliestDay: number, slot: Slot, type: string, data: Record<string, any> = {}): SimEvent {
+    return this.addEvent(this.weekday(Math.max(earliestDay, this.state.day + 1)), slot, "meeting", type, data);
+  }
+
+  producerLoad(pid: string): number {
+    return this.state.movies.filter((m) => m.producerId === pid && ["prepro", "production", "post"].includes(m.phase)).length;
+  }
+
+  /** 1.0 at or under ideal load; grows per extra project. Applied to timelines, burn, and polish. */
+  overloadFactor(pid?: string): number {
+    if (!pid) return 1;
+    const P = this.content.economy.producers;
+    return 1 + Math.max(0, this.producerLoad(pid) - P.idealLoad) * P.overloadPenaltyPerExtra;
+  }
+
+  staffProducers(): Person[] {
+    return this.state.people.filter((p) => p.role === "producer" && p.signedByStudio === 0);
+  }
+
+  estimateRevenue(minBudget: number, genre: string): number {
+    const mult = this.content.economy.revenueEstimate.genreMultiplier[genre] ?? 2.4;
+    const fad = this.state.audience.fads[genre] ?? 1;
+    return Math.round((minBudget * mult * (0.7 + fad * 0.3)) / 1e5) * 1e5;
   }
 
   // ---------- ids / events / email ----------
@@ -196,9 +231,10 @@ export class Sim {
     for (const m of st.movies) {
       if (m.phase === "release" && m.releaseDay !== undefined) this.weeklyGross(m);
     }
-    // standings snapshots
-    for (const s of st.studios) s.history.push({ week, profit: s.totalRevenue - s.totalSpent });
+    // standings snapshots — REPORTED profit only: budgets post as a lump on release day
+    for (const s of st.studios) s.history.push({ week, profit: s.totalRevenue - s.reportedSpend });
     this.standingsEmail();
+    this.rivalBankruptcyCheck();
     this.scheduleAnnualEvents();
     this.scheduleStandups();
     // rival policy
@@ -262,14 +298,85 @@ export class Sim {
     const rng = this.rng.get("rivals");
     for (let si = 1; si < this.state.studios.length; si++) {
       const s = this.state.studios[si];
+      if (s.bankrupt) continue;
       const active = this.state.movies.filter((m) => m.studio === si && !["done", "cancelled"].includes(m.phase));
       if (active.length < R.maxConcurrent && s.cash > R.cashFloor && rng.chance(0.35 + (s.riskAppetite ?? 0.5) * 0.3)) {
         const writers = this.state.people.filter((p) => p.role === "writer");
         const writer = rng.pick(writers);
         const pitch = mintPitch(rng, this.content, this.state, writer, si);
+        // budget discipline: rivals only bet what they can cover
+        if (s.cash < pitch.minBudget * R.budgetDiscipline) continue;
         this.rivalGreenlight(si, writer, pitch, rng);
       }
     }
+  }
+
+  /** Rivals live under the same gravity: sustained negative cash = fire-sale exit (+ optional replacement). */
+  private rivalBankruptcyCheck() {
+    const R = this.content.economy.rivals;
+    for (let si = 1; si < this.state.studios.length; si++) {
+      const s = this.state.studios[si];
+      if (s.bankrupt) continue;
+      const key = `rivalRed_${si}`;
+      if (s.cash < 0) this.state.flags[key] = (this.state.flags[key] ?? 0) + 1;
+      else this.state.flags[key] = 0;
+      if ((this.state.flags[key] ?? 0) >= R.bankruptcyGraceWeeks) {
+        s.bankrupt = true;
+        const theirMovies = this.state.movies.filter((m) => m.studio === si && !["done", "cancelled"].includes(m.phase));
+        for (const m of theirMovies) {
+          m.phase = "cancelled";
+          this.state.events = this.state.events.filter((e) => e.data.movieId !== m.id);
+        }
+        for (const p of this.state.people) {
+          if (p.signedByStudio === si) {
+            p.signedByStudio = undefined;
+            p.busyUntil = this.state.day;
+          }
+        }
+        const dlg = this.rng.get("dialogue");
+        this.pushEmail({
+          from: "Varietal Trade Daily",
+          fromRole: "trade",
+          subject: `${s.name} COLLAPSES — fire sale on the lot`,
+          body: `${s.name} has shuttered. ${theirMovies.length} project${theirMovies.length === 1 ? "" : "s"} dead in the water, talent contracts voided — every name on their roster is suddenly free and taking calls.\n${bankLine(dlg, this.content, "news-closer")}`,
+          actions: [],
+          ctx: {},
+        });
+        if (R.replacementEntry) {
+          this.addEvent(this.weekday(this.state.day + 28), "morning", "outcome", "newStudioEntry", {});
+        }
+      }
+    }
+  }
+
+  outcome_newStudioEntry(_ev: SimEvent) {
+    const rng = this.rng.get("rivals");
+    const banks = this.content.people.nameBanks;
+    const used = new Set(this.state.studios.map((s) => s.name));
+    let name = "";
+    for (let i = 0; i < 20 && (!name || used.has(name)); i++) {
+      name = `${rng.pick(banks.last as string[])} ${rng.pick(["Pictures", "Studios", "Films", "Entertainment", "Media"])}`;
+    }
+    if (used.has(name)) return;
+    this.state.studios.push({
+      name,
+      cash: this.content.economy.rivals.startingCash,
+      isPlayer: false,
+      persona: rng.pick(["aggressive", "prestige", "cheap", "franchise", "chaotic"]),
+      riskAppetite: 0.3 + rng.next() * 0.6,
+      history: [],
+      totalRevenue: 0,
+      totalSpent: 0,
+      reportedSpend: 0,
+    });
+    this.pushEmail({
+      from: "Varietal Trade Daily",
+      fromRole: "trade",
+      subject: `New money in town: ${name}`,
+      body: `A fresh shingle goes up where the last one burned down. ${name} opens with deep pockets and no scars. Yet.`,
+      actions: [],
+      ctx: {},
+    });
   }
 
   private rivalGreenlight(si: number, writer: Person, pitch: PitchData, rng: Rng) {
@@ -347,6 +454,8 @@ export class Sim {
       dailyCost: 0,
       locations: 5,
       quality: { script: 0, direction: 0, performance: 0, vfx: 0, polish: 0 },
+      pitchLogline: pitch.logline,
+      estRevenue: this.estimateRevenue(pitch.minBudget, pitch.genre),
       hype: 15,
       marketing: 0,
       weeklyGross: [],
@@ -361,7 +470,7 @@ export class Sim {
   }
 
   private scheduleWriterPitch(writer: Person, inDays: number) {
-    this.addEvent(this.state.day + inDays, "morning", "outcome", "writerPitch", { writerId: writer.id });
+    this.addEvent(this.weekday(this.state.day + inDays), "morning", "outcome", "writerPitch", { writerId: writer.id });
   }
 
   // ---------- outcomes ----------
@@ -380,9 +489,11 @@ export class Sim {
     const greeting = bankLine(dlg, this.content, `pitch-greeting-${tone}`);
     const twist = bankLine(dlg, this.content, "pitch-twist");
     const hotGenre = Object.entries(this.state.audience.fads).sort((a, b) => b[1] - a[1])[0][0];
+    const director = this.person(pitch.idealDirectorId);
+    const roughDays = Math.round((director?.avgLocations ?? 5) * this.content.economy.production.baseDaysPerLocation + this.content.economy.post.baseDays + 40);
     const body = `${greeting} ${pitch.title} — ${pitch.genre}/${pitch.subgenre}, ${pitch.logline}. Think ${hotGenre.toLowerCase()}, but ${twist}.${
       pitch.franchise ? ` This slots right into ${pitch.franchise}.` : ""
-    }\nEstimated to greenlight a script: ${money(pitch.minBudget * this.content.economy.phases.greenlightScriptFactor)}. I'm shopping it around in two weeks either way. ${bankLine(dlg, this.content, "writer-signoff")}`;
+    }\nBallpark: ${money(pitch.minBudget)} minimum budget · ~${money(this.estimateRevenue(pitch.minBudget, pitch.genre))} box office if we don't blow it · roughly ${Math.round(roughDays / 7)} weeks pitch-to-print.\nGreenlighting a script runs ${money(pitch.minBudget * this.content.economy.phases.greenlightScriptFactor)}. I'm shopping it around in two weeks either way. ${bankLine(dlg, this.content, "writer-signoff")}`;
     this.pushEmail({
       from: writer.name,
       fromRole: "writer",
@@ -406,43 +517,96 @@ export class Sim {
     const rng = this.rng.get("quality");
     const genreFit = writer.capableGenres?.includes(m.genre) ? 1 : 0.75;
     m.quality.script = Math.max(5, Math.min(100, (writer.avgRating ?? 50) * genreFit + rng.gaussian(0, 8)));
+    if (m.studio === 0) this.scriptPackageEmail(m);
+  }
+
+  /** The script package: everything from the pitch + attachments + producer assignment gate. */
+  scriptPackageEmail(m: Movie) {
+    const writer = this.person(m.writerId)!;
     const E = this.content.economy.phases;
     const cost = Math.round(m.minBudget * E.greenlightPreproFactor);
-    if (m.studio === 0) {
-      this.pushEmail({
-        from: writer.name,
-        fromRole: "writer",
-        subject: `${m.title}: the script is DONE`,
-        body: `Pages attached. My best work since the last one. Target length ${m.targetLength} min, estimated ${m.estVfx} VFX shots, minimum budget ${money(m.minBudget)}.\nGreenlighting pre-production runs ${money(cost)}.`,
-        actions: [
-          { id: "approvePrepro", label: `Greenlight Pre-Production (${money(cost)})` },
-          { id: "abandon", label: "Shelve It (write off)" },
-        ],
-        ctx: { movieId: m.id },
-      });
-    }
+    const director = this.person(m.directorId ?? (m as any).idealDirectorId);
+    const proposedCast = m.idealCastIds.map((c) => this.person(c)).filter(Boolean) as Person[];
+    const prodDays = Math.round(((director?.avgLocations ?? 5) * this.content.economy.production.baseDaysPerLocation));
+    const soonest = this.state.day + this.content.economy.phases.preproDays[0] + prodDays + this.content.economy.post.baseDays + 21;
+    const d = calDate(this.weekday(soonest));
+    const body =
+      `Pages attached. My best work since the last one.\n` +
+      `— ${m.title} (${m.genre}/${m.subgenre}, ${m.estRating}) · "${m.pitchLogline ?? "you read the pitch"}"\n` +
+      `— Director attached: ${director ? `${director.name} (${director.archetype.replace(/-/g, " ")})` : "TBD"}\n` +
+      `— Proposed cast: ${proposedCast.length ? proposedCast.map((c) => c.name).join(", ") : "open call"}\n` +
+      `— Target ${m.targetLength} min · ~${m.estVfx} VFX shots · minimum budget ${money(m.minBudget)}\n` +
+      `— Projected box office: ~${money(m.estRevenue ?? this.estimateRevenue(m.minBudget, m.genre))}\n` +
+      `— Soonest realistic release: WK ${d.week} ${SEASONS[d.season]} YR ${d.year}\n\n` +
+      `Pre-production needs a PRODUCER on it (${money(cost)} to greenlight). Current staff loads below.`;
+    const producers = this.staffProducers();
+    const actions = producers.map((p) => ({
+      id: `assignProducer_${p.id}`,
+      label: `Assign ${p.name} (${this.producerLoad(p.id)} active${this.producerLoad(p.id) > this.content.economy.producers.idealLoad - 1 ? " ⚠" : ""}) — ${money(cost)}`,
+    }));
+    actions.push({ id: "park", label: "Park in Development (no burn, wait for a producer)" });
+    actions.push({ id: "abandon", label: "Shelve It (write off)" });
+    this.pushEmail({
+      from: writer.name,
+      fromRole: "writer",
+      subject: `${m.title}: the script is DONE`,
+      body,
+      actions,
+      ctx: { movieId: m.id },
+    });
   }
 
   outcome_preproDone(ev: SimEvent) {
     const m = this.movie(ev.data.movieId);
     if (!m || m.phase !== "prepro") return;
-    // attach a producer automatically (your staff), budget/timeline proposal
-    const producers = this.state.people.filter((p) => p.role === "producer");
-    const producer = this.rng.get("people").pick(producers);
-    m.producerId = producer.id;
+    const producer = this.person(m.producerId)!;
+    // casting gate: production never starts uncast — the producer fills gaps with free workhorses
+    let autofilled: string[] = [];
+    if (m.castIds.length === 0) {
+      const free = this.state.people
+        .filter((p) => p.role === "cast" && p.busyUntil <= this.state.day)
+        .sort((a, b) => (a.dailyRate ?? 0) - (b.dailyRate ?? 0))
+        .slice(0, 2);
+      for (const c of free) {
+        m.castIds.push(c.id);
+        c.busyUntil = this.state.day + 120;
+        c.signedByStudio = 0;
+        autofilled.push(c.name);
+      }
+    }
     const director = this.person(m.directorId);
-    const timeline = this.estimateTimeline(m);
-    const budget = Math.round(m.minBudget * (producer.avgProdCost ?? 1) * (director ? 1 + ((director.avgVfxShots ?? 100) - m.estVfx) / 4000 : 1));
+    const overload = this.overloadFactor(m.producerId);
+    this.estimateTimeline(m);
+    const budget = Math.round(m.minBudget * (producer.avgProdCost ?? 1) * overload * (director ? 1 + ((director.avgVfxShots ?? 100) - m.estVfx) / 4000 : 1));
     m.budget = Math.max(m.minBudget * 0.8, budget);
     const E = this.content.economy.phases;
     const cost = Math.round(m.budget * E.greenlightProductionFactor);
-    m.dailyCost = Math.round((m.budget * this.content.economy.production.baseDailyCostFactor) / 1000) * 1000;
-    const prodDays = Math.round(m.locations * this.content.economy.production.baseDaysPerLocation * (producer.avgProdLength ?? 1));
+    m.dailyCost = Math.round((m.budget * this.content.economy.production.baseDailyCostFactor * overload) / 1000) * 1000;
+    const prodDays = Math.round(m.locations * this.content.economy.production.baseDaysPerLocation * (producer.avgProdLength ?? 1) * overload);
+    // build the shot list: per-location blocks with cast requirements
+    const rng = this.rng.get("schedule");
+    const blocks = [] as NonNullable<Movie["shotList"]>;
+    let daysLeft = prodDays;
+    for (let loc = 1; loc <= m.locations; loc++) {
+      const d = loc === m.locations ? daysLeft : Math.max(2, Math.round(prodDays / m.locations + rng.int(-2, 2)));
+      daysLeft -= d;
+      const castNeeded = m.castIds.filter(() => rng.chance(0.75));
+      blocks.push({ location: loc, days: d, castIds: castNeeded.length ? castNeeded : m.castIds.slice(0, 1) });
+    }
+    m.shotList = blocks;
+    m.estRevenue = this.estimateRevenue(m.budget, m.genre);
+    const relDay = this.weekday(this.state.day + prodDays + this.content.economy.post.baseDays + Math.round(m.estVfx / 12) + 21);
+    const rd = calDate(relDay);
     this.pushEmail({
       from: producer.name,
       fromRole: "producer",
-      subject: `${m.title}: pre-production wrapped`,
-      body: `Cast is locked, locations scouted (${m.locations}), schedule drafted. Producing this myself — you're welcome.\nActual budget: ${money(m.budget)}. Production: ~${prodDays} days at ${money(m.dailyCost)}/day. Cost to greenlight production: ${money(cost)}.`,
+      subject: `${m.title}: pre-production wrapped — full plan attached`,
+      body:
+        `${autofilled.length ? `Casting gaps filled with ${autofilled.join(" and ")} (best available — don't make that face). ` : "Cast locked. "}` +
+        `Locations scouted (${m.locations}), shot list drafted${overload > 1 ? ` (I am spread across ${this.producerLoad(m.producerId!)} projects, numbers reflect that)` : ""}.\n` +
+        `Actual budget: ${money(m.budget)} · ~${prodDays} days at ${money(m.dailyCost)}/day · greenlight: ${money(cost)}.\n` +
+        `Estimated release: WK ${rd.week} ${SEASONS[rd.season]} YR ${rd.year} · projected box office ~${money(m.estRevenue)}.\n` +
+        `Open the ${m.title} dossier for the full production plan (shot schedule, cast availability, projections).`,
       actions: [
         { id: "approveProduction", label: `Greenlight Production (${money(cost)})` },
         { id: "abandon", label: "Kill It Here (write off)" },
@@ -514,6 +678,8 @@ export class Sim {
     if (!m || (m.phase !== "post" && m.phase !== "release")) return;
     m.phase = "release";
     m.releaseDay = this.state.day;
+    // the books open: full budget + campaign posts to the public standings as one lump
+    this.state.studios[m.studio].reportedSpend += m.budget + m.marketing;
     this.generateReviews(m);
     const tier = (this.content.economy.post.marketingTiers as any[]).find((t) => t.id === ev.data.marketingTier) ?? { reach: 0.4 };
     const funnel = computeFunnel(this.content, this.state, m, tier.reach);
@@ -608,6 +774,7 @@ export class Sim {
       p.signedByStudio = undefined;
     }
     this.addCredits(m);
+    if (m.studio === 0 && m.producerId) this.notifyParkedMovies(`${this.person(m.producerId)?.name ?? "A producer"} just wrapped ${m.title}.`);
     if (m.studio === 0) {
       this.pushEmail({
         from: "Distribution Desk",
@@ -746,8 +913,8 @@ export class Sim {
 
   // ---------- board / quarterly ----------
   private quarterlyBoard() {
-    // board review meeting on the first Monday of each season (after year start)
-    this.addEvent(this.state.day + 3, "afternoon", "meeting", "board", {});
+    // board review meeting early each season (weekday-booked)
+    this.bookMeeting(this.state.day + 3, "afternoon", "board", {});
   }
 
   applyQuarterResult() {
@@ -770,16 +937,16 @@ export class Sim {
     const d = calDate(this.state.day);
     if (d.week === 1 && d.year === 1) return;
     const dlg = this.rng.get("dialogue");
-    const ranked = [...this.state.studios].sort((a, b) => b.totalRevenue - b.totalSpent - (a.totalRevenue - a.totalSpent));
+    const reported = (s: Studio) => s.totalRevenue - s.reportedSpend;
+    const ranked = [...this.state.studios].sort((a, b) => reported(b) - reported(a));
     const yourRank = ranked.indexOf(this.player) + 1;
     const prev = this.state.flags.prevRank ?? yourRank;
     this.state.flags.prevRank = yourRank;
     const trend = yourRank < prev ? "up" : yourRank > prev ? "down" : "flat";
     const overtaker = trend === "down" ? ranked[yourRank - 2]?.name : undefined;
-    let body = `${bankLine(dlg, this.content, "trade-observation")}: the week in profit.\n`;
+    let body = `${bankLine(dlg, this.content, "trade-observation")}: the week in RELEASED-picture profit (nobody sees your books until opening night).\n`;
     ranked.forEach((s, i) => {
-      const p = s.totalRevenue - s.totalSpent;
-      body += `#${i + 1} ${s.name}${s.isPlayer ? " (you)" : ""} — ${money(p)}\n`;
+      body += `#${i + 1} ${s.name}${s.isPlayer ? " (you)" : ""}${s.bankrupt ? " †defunct" : ""} — ${money(reported(s))}\n`;
     });
     if (overtaker) body += bankLine(dlg, this.content, "overtake-needle", { rival: overtaker });
     this.pushEmail({
@@ -836,15 +1003,28 @@ export class Sim {
     if (actionId === "scheduleMeeting") {
       const lead = this.content.game.meetingLeadDays;
       const day = this.state.day + this.rng.get("schedule").int(lead[0], lead[1]);
-      this.addEvent(day, "morning", "meeting", "pitch", { writerId: em.ctx.writerId, pitch: em.ctx.pitch });
+      this.bookMeeting(day, "morning", "pitch", { writerId: em.ctx.writerId, pitch: em.ctx.pitch });
     } else if (actionId === "ignore") {
       const w = this.person(em.ctx.writerId);
       if (w) w.relationship -= 4;
-    } else if (actionId === "approvePrepro" && m) {
+    } else if (actionId.startsWith("assignProducer_") && m) {
+      const pid = actionId.slice("assignProducer_".length);
+      const producer = this.person(pid);
+      if (!producer) return;
       const cost = Math.round(m.minBudget * E.greenlightPreproFactor);
       this.spend(0, cost);
       m.spent += cost;
+      m.producerId = pid;
       this.startPrepro(m);
+    } else if (actionId === "park" && m) {
+      m.phase = "development";
+    } else if (actionId === "hireProducer") {
+      const producer = this.person(em.ctx.producerId);
+      if (producer && producer.signedByStudio === undefined) {
+        this.spend(0, this.content.economy.producers.hireCost);
+        producer.signedByStudio = 0;
+        this.notifyParkedMovies(`${producer.name} has joined the studio.`);
+      }
     } else if (actionId === "approveProduction" && m) {
       const cost = Math.round(m.budget * E.greenlightProductionFactor);
       this.spend(0, cost);
@@ -913,6 +1093,42 @@ export class Sim {
     return opts;
   }
 
+  /** When producer capacity opens up, resurface parked development movies with assignment actions. */
+  notifyParkedMovies(reason: string) {
+    const parked = this.state.movies.filter((m) => m.studio === 0 && m.phase === "development");
+    if (!parked.length) return;
+    for (const m of parked) this.scriptPackageEmail(m);
+    this.pushEmail({
+      from: "Development Office",
+      fromRole: "producer",
+      subject: `Development shelf: ${parked.length} project${parked.length > 1 ? "s" : ""} waiting`,
+      body: `${reason}\nWaiting for a producer: ${parked.map((m) => m.title).join(", ")}. Fresh assignment memos are in your inbox.`,
+      actions: [],
+      ctx: {},
+    });
+  }
+
+  outcome_producerOffer(_ev: SimEvent) {
+    const candidates = this.state.people.filter((p) => p.role === "producer" && p.signedByStudio === undefined);
+    if (candidates.length) {
+      const p = this.rng.get("people").pick(candidates);
+      const P = this.content.economy.producers;
+      this.pushEmail({
+        from: `${p.name} (via headhunter)`,
+        fromRole: "producer",
+        subject: `Producer available: ${p.name}`,
+        body: `${p.name} (${p.archetype.replace(/-/g, "-")}) is taking meetings. Track record: timelines ×${(p.avgProdLength ?? 1).toFixed(2)}, costs ×${(p.avgProdCost ?? 1).toFixed(2)}, revenue ×${(p.avgProdRevenue ?? 1).toFixed(2)}, craft ${p.avgRating}/100.\nSigning fee: ${money(P.hireCost)}. More producers = more movies you can actually run at once.`,
+        actions: [
+          { id: "hireProducer", label: `Hire ${p.name} (${money(P.hireCost)})` },
+          { id: "ignore", label: "Pass" },
+        ],
+        ctx: { producerId: p.id },
+      });
+    }
+    const iv = this.content.economy.producers.hireOfferIntervalDays;
+    this.addEvent(this.weekday(this.state.day + this.rng.get("schedule").int(iv[0], iv[1])), "morning", "outcome", "producerOffer", {});
+  }
+
   private cancelMovie(m: Movie) {
     m.phase = "cancelled";
     for (const cid of [...m.castIds, m.directorId].filter(Boolean) as string[]) {
@@ -924,6 +1140,7 @@ export class Sim {
     for (const ev of this.state.events.filter((e) => e.data.movieId === m.id)) {
       this.state.events = this.state.events.filter((e) => e !== ev);
     }
+    if (m.studio === 0 && m.producerId) this.notifyParkedMovies(`${this.person(m.producerId)?.name ?? "A producer"} is free after ${m.title} was shut down.`);
   }
 
   // ---------- player phase starters ----------
@@ -947,17 +1164,19 @@ export class Sim {
     m.phase = "prepro";
     m.phaseStart = this.state.day;
     const rng = this.rng.get("schedule");
-    const days = rng.int(E.preproDays[0], E.preproDays[1]);
-    m.phaseEnd = this.state.day + days;
-    // casting interviews for ideal cast that's free
+    const overload = this.overloadFactor(m.producerId);
+    const days = Math.round(rng.int(E.preproDays[0], E.preproDays[1]) * overload);
+    // casting interviews for ideal cast that's free — pre-production cannot wrap before casting resolves
     let slotDay = this.state.day + 2;
+    let lastCastingDay = this.state.day;
     for (const cid of m.idealCastIds) {
       const c = this.person(cid);
       if (!c) continue;
       this.state.flags[`playerWanted_${cid}`] = true;
       if (c.busyUntil > this.state.day) continue; // already signed away — scarcity bites
-      this.addEvent(slotDay, "afternoon", "meeting", "casting", { movieId: m.id, castId: cid });
-      slotDay += 2;
+      const ev = this.bookMeeting(slotDay, "afternoon", "casting", { movieId: m.id, castId: cid });
+      lastCastingDay = Math.max(lastCastingDay, ev.day);
+      slotDay = ev.day + 2;
     }
     // attach director: ideal if free, else best free
     const ideal = this.person(m.directorId);
@@ -972,6 +1191,7 @@ export class Sim {
         pick.signedByStudio = 0;
       }
     }
+    m.phaseEnd = Math.max(this.state.day + days, lastCastingDay + 3);
     this.addEvent(m.phaseEnd, "morning", "outcome", "preproDone", { movieId: m.id });
   }
 
@@ -995,12 +1215,12 @@ export class Sim {
     // exec standup frequency escalates with lost patience: quarterly / monthly / biweekly / weekly
     const execEvery = [12, 4, 2, 1][tier];
     if ((d.week - 2) % execEvery === 0 && !this.state.events.some((e) => e.type === "execStandup" && e.day <= this.state.day + 7)) {
-      this.addEvent(this.state.day + 4, "morning", "meeting", "execStandup", {});
+      this.bookMeeting(this.state.day + 4, "morning", "execStandup", {});
     }
-    // producers standup monthly, only when something's in production
-    const inProd = this.state.movies.some((m) => m.studio === 0 && (m.phase === "production" || m.phase === "post"));
-    if (inProd && (d.week - 1) % 4 === 0 && !this.state.events.some((e) => e.type === "producersStandup" && e.day <= this.state.day + 7)) {
-      this.addEvent(this.state.day + 2, "morning", "meeting", "producersStandup", {});
+    // producers standup WEEKLY whenever any producer has an active project
+    const inFlight = this.state.movies.some((m) => m.studio === 0 && ["prepro", "production", "post"].includes(m.phase));
+    if (inFlight && !this.state.events.some((e) => e.type === "producersStandup" && e.day <= this.state.day + 7)) {
+      this.bookMeeting(this.state.day + 1, "morning", "producersStandup", {});
     }
   }
 
@@ -1009,8 +1229,8 @@ export class Sim {
     const E = this.content.economy;
     const d = calDate(this.state.day);
     const yearStart = (d.year - 1) * 336;
-    const conDay = yearStart + (E.convention.week - 1) * DAYS_PER_WEEK + 5;
-    const awardsDay = yearStart + (E.awards.week - 1) * DAYS_PER_WEEK + 5;
+    const conDay = this.weekday(yearStart + (E.convention.week - 1) * DAYS_PER_WEEK + 3);
+    const awardsDay = this.weekday(yearStart + (E.awards.week - 1) * DAYS_PER_WEEK + 3);
     if (conDay > this.state.day && !this.state.events.some((e) => e.type === "convention" && e.day === conDay))
       this.addEvent(conDay, "afternoon", "meeting", "convention", {});
     if (awardsDay > this.state.day && !this.state.events.some((e) => e.type === "awards" && e.day === awardsDay))

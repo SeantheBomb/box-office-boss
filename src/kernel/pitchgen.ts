@@ -19,13 +19,21 @@ export interface PitchData {
   idealCastIds: string[];
 }
 
-export function mintTitle(rng: Rng, content: Content): string {
+export function mintTitle(rng: Rng, content: Content, state?: RunState): string {
   const P = content.pitches;
-  const grammar = rng.pick(P.titleGrammars as string[]);
-  return grammar.replace(/\{([\w-]+)\}/g, (_, key) => {
-    const bank = P.titleWords[key] as string[] | undefined;
-    return bank ? rng.pick(bank) : key;
-  });
+  const make = () => {
+    const grammar = rng.pick(P.titleGrammars as string[]);
+    return grammar.replace(/\{([\w-]+)\}/g, (_, key) => {
+      const bank = P.titleWords[key] as string[] | undefined;
+      return bank ? rng.pick(bank) : key;
+    });
+  };
+  // non-franchise movies never share a name — retry against every title in the world
+  const used = new Set(state?.movies.map((m) => m.title.toLowerCase()) ?? []);
+  let title = make();
+  for (let i = 0; i < 30 && used.has(title.toLowerCase()); i++) title = make();
+  if (used.has(title.toLowerCase())) title = `${title} (${rng.int(2, 99)})`; // pathological fallback
+  return title;
 }
 
 export function mintPitch(rng: Rng, content: Content, state: RunState, writer: Person, forStudio: number): PitchData {
@@ -50,7 +58,7 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
     .replace("{theme2}", theme2)
     .replace("{setPiece}", rng.pick(P.setPieces as string[]));
   return {
-    title: mintTitle(rng, content),
+    title: mintTitle(rng, content, state),
     genre,
     subgenre,
     estRating: rng.pick(G.ratings as string[]),

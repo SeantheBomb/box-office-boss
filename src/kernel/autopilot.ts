@@ -1,7 +1,51 @@
-// Deterministic autopilot: drives a run with simple policies. Used by tests and the Sim Lab.
+// Deterministic autopilot: drives a run with simple policies. Used by tests, the Sim Lab,
+// and the preseed caretaker (the "predecessor" who ran the studio before the player).
 
 import { Sim } from "./sim";
 import { MeetingSession } from "./meetings";
+
+/** The canonical sane-player policy: capped slate, affordable pitches, least-loaded producer,
+ *  throughput-picked VFX, standard marketing/pricing. */
+export function disciplinedEmailPolicy(maxActive = 3) {
+  return (s: Sim, emailId: string, actions: { id: string; label: string }[]): string => {
+    const active = s.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled", "development"].includes(m.phase)).length;
+    if (actions.some((a) => a.id === "scheduleMeeting")) {
+      const em = s.state.inbox.find((e) => e.id === emailId);
+      return active < maxActive && (em?.ctx.pitch?.minBudget ?? 0) < s.player.cash / 3 ? "scheduleMeeting" : "ignore";
+    }
+    const producerAssigns = actions.filter((a) => a.id.startsWith("assignProducer_"));
+    if (producerAssigns.length) {
+      const best = producerAssigns
+        .map((a) => ({ a, load: s.producerLoad(a.id.slice("assignProducer_".length)) }))
+        .sort((x, y) => x.load - y.load)[0];
+      return best.load < s.content.economy.producers.idealLoad ? best.a.id : "park";
+    }
+    if (actions.some((a) => a.id === "hireProducer")) {
+      const parked = s.state.movies.filter((m) => m.studio === 0 && m.phase === "development").length;
+      return parked > 0 && s.player.cash > s.content.economy.producers.hireCost * 3 ? "hireProducer" : "ignore";
+    }
+    for (const p of ["approveProduction", "expandBudget"]) if (actions.some((a) => a.id === p)) return p;
+    const vfxBids = actions.filter((a) => a.id.startsWith("vfx_"));
+    if (vfxBids.length) {
+      return vfxBids
+        .map((a) => ({ a, v: s.state.vfxStudios.find((v) => v.id === a.id.slice(4))! }))
+        .sort((x, y) => y.v.maxDailyShots - x.v.maxDailyShots)[0].a.id;
+    }
+    const mid = actions.find((a) => a.id.startsWith("mkt_standard") || a.id.startsWith("dist_standard"));
+    return (mid ?? actions[0]).id;
+  };
+}
+
+export function disciplinedMeetingPolicy(maxActive = 3) {
+  return (s: Sim, choices: { id: string; line: string }[]): string => {
+    const active = s.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled", "development"].includes(m.phase)).length;
+    if (active >= maxActive && choices.some((c) => c.id === "pos_pass")) return "pos_pass";
+    const gl = choices.find((c) => c.id === "pos_greenlight");
+    if (gl) return gl.id;
+    const ride = choices.find((c) => c.id === "ride");
+    return (ride ?? choices[0]).id;
+  };
+}
 
 export interface AutopilotOptions {
   days: number;

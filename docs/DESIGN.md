@@ -826,6 +826,57 @@ design requirements, PlayPen-style).
 9. **M8 — Balance + long-run play:** Sean's diagnostic loop — telemetry + Sim Lab sweeps,
    tuning rounds. Optional Electron shell.
 
+## 15. Phase 2 — Playtest 1 Findings & Consolidated Rework (locked 2026-08-10)
+
+Sean's first playtest (bankrupt day 104, 21 movies greenlit, zero releases, all rivals
+also silently bankrupt) produced 19 feedback items + 5 found bugs, consolidated into six
+systems rather than patches:
+
+**P2.1 BossOS (full desktop metaphor).** The office monitor becomes a diagetic desktop
+OS: Mail, Calendar, Production Board, Standings, Audience, and Dossier windows —
+draggable/resizable/z-ordered with title bars + taskbar, layout persisted. No surface
+takes over the screen; everything cross-references. Mail gets unread vs needs-reply
+badges, type icons, and filter/search. Calendar and Mail visible together. Meetings stay
+full-screen scene interruptions. Retires the calendar-wall and reports-corner scenes.
+
+**P2.2 Producers are the pacing governor.** A movie cannot enter pre-production without
+an assigned producer (hard gate — unassigned movies wait in a no-burn "development"
+lot). Producers handle ~2 movies well; overload visibly degrades timeline/budget/quality
+on all their projects. Weekly standup = each producer reports their own slate. Roster
+starts at 2; hiring producers is the expansion lever (and the natural cap that prevents
+the 21-movie bankruptcy).
+
+**P2.3 Scheduling integrity.** Meetings and player-facing emails book weekdays only
+(weekends are outcome-only). Back-to-back same-day meetings queue cleanly (surface
+remount bug fixed). Skip-to-next-event button jumps the clock. Casting must actually
+resolve before production starts. All talent commitments live on one availability
+model: pre-production wrap presents a full production plan (director, full cast, shot
+list, per-location gantt with cast-availability blockouts, updated release estimate,
+market-interest projection, estimated earnings) in the Movie Dossier.
+
+**P2.4 Dossiers.** One MovieDossier component that grows per phase (pitch facts → script
+package incl. attached director/proposed cast/earliest release → production plan →
+release funnel) and one PersonDossier (all known stats, filmography, commitments,
+relationship). Every email and meeting links to them; meeting scenes expose the
+counterpart's dossier. Pitch view includes estimated box-office revenue + production
+timeline. Portraits get per-role visual language (role-distinct framing/accessories).
+
+**P2.5 Economy & information rework.** Standings (chart + weekly email) report only
+RELEASED movies: full budget posts as one lump on release day — for you and rivals, so
+rival work-in-progress is hidden intel. Private cash/burn stays fully visible. Rivals
+live under the same rules: real bankruptcy with fire-sale + exit news (replacement
+studio may enter). Pitch meetings rework: ask all probes, each wears hidden writer
+patience (read it from reaction text); the writer decides at the end weighing patience +
+relationship + offer, and can reject even full price.
+
+**P2.6 Content depth.** TMDB dev-time bake (FBO's key): real movie titles/loglines/
+genre/budget-revenue pairs calibrate the generators and enrich banks; real name pools
+recombine into fictional people (no real identities at runtime; pure static content).
+Duplicate-title guard (non-franchise movies never share a name). Preseeded start:
+inherited slate (1 movie ~2 weeks from release, 1 mid-production, 1 script incoming),
+2 producers, rivals staggered across phases, 8 weeks backdated standings, welcome email
+summarizing the inheritance.
+
 **Advice to future agents**
 - The kernel/surface split is the load-bearing wall: nothing in `src/kernel/` may import
   DOM or content *files* directly (everything arrives through ContentStore). This is what

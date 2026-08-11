@@ -65,8 +65,20 @@
     "maxConcurrent": 3,
     "greenlightCheckDays": 14,
     "cashFloor": 2000000,
-    "startingCash": 30000000
+    "startingCash": 60000000,
+    "budgetDiscipline": 1.3,
+    "bankruptcyGraceWeeks": 4,
+    "replacementEntry": true
   },
-  "writers": { "pitchIntervalDays": [6, 16] },
-  "sequel": { "minProfit": 5000000, "fanScoreMin": 55 }
+  "producers": {
+    "startingRoster": 2,
+    "idealLoad": 2,
+    "overloadPenaltyPerExtra": 0.18,
+    "hireCost": 2000000,
+    "hireOfferIntervalDays": [35, 70]
+  },
+  "writers": { "pitchIntervalDays": [20, 45] },
+  "sequel": { "minProfit": 5000000, "fanScoreMin": 55 },
+  "preseed": { "warmupDays": 56, "handoffCashFloor": 35000000 },
+  "revenueEstimate": { "genreMultiplier": { "Action": 2.6, "Comedy": 2.9, "Horror": 3.6, "Drama": 2.2, "Sci-Fi": 2.5, "Thriller": 2.6, "Family": 2.8, "Western": 1.9 } }
 }

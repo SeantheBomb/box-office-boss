@@ -5,7 +5,9 @@
     "probes": [
       { "id": "director", "line": "Who do you see directing?", "reveals": "idealDirector" },
       { "id": "rival", "line": "Word is a rival's circling something similar. Why yours?", "reveals": "fadStatus" },
-      { "id": "soul", "line": "What's it really about?", "reveals": "themes" }
+      { "id": "soul", "line": "What's it really about?", "reveals": "themes" },
+      { "id": "money", "line": "Walk me through the money. What does this actually make?", "reveals": "revenue" },
+      { "id": "timeline", "line": "How fast can this be in theaters?", "reveals": "timeline" }
     ],
     "positions": [
       { "id": "greenlight", "line": "Let's do it. Full price, straight to script.", "writerMood": 15 },

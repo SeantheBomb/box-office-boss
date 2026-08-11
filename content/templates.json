@@ -65,7 +65,12 @@
     "greenlight-congrats": ["The lot's buzzing. Mostly bees, but still.", "Champagne's on ice. The cheap shelf, but on ice."],
     "screening-good": ["Cards came back strong. One person wrote 'MORE' in what we hope is ink.", "The room laughed where intended. Historic."],
     "screening-mixed": ["Cards are... mixed. One just says 'why'.", "Half the room loved it. The other half were the first half's dates."],
-    "screening-bad": ["Three walkouts, and one was the projectionist.", "The cards used words we had to look up. They weren't compliments."]
+    "screening-bad": ["Three walkouts, and one was the projectionist.", "The cards used words we had to look up. They weren't compliments."],
+    "patience-tell-high": ["(They lean in. The folder inches toward you.)", "(They're doodling your studio logo on a napkin. Good sign.)", "(Their coffee sits forgotten. All eyes on you.)"],
+    "patience-tell-mid": ["(A polite nod. The folder stays where it is.)", "(They glance at their phone, then back. Still in the room.)", "(They refill their water. Buying time or staying hydrated. Unclear.)"],
+    "patience-tell-low": ["(They check their watch with their whole arm.)", "(The folder is slowly migrating back into their bag.)", "(They just said 'anyway' to nothing. Land the plane.)"],
+    "standup-free-producer": ["{producer} has nothing on their desk and keeps reorganizing it meaningfully.", "{producer}: \"My calendar is a desert. Feed me a project.\"", "{producer} is 'between pictures', which is producer for bored and dangerous."],
+    "standup-overloaded": ["{producer} is running {n} pictures and one visible eye twitch.", "{producer} answered 'which movie?' to a question about lunch.", "{producer} has {n} projects and has started numbering their sighs."]
   },
   "toneTiers": ["warm", "curt", "cold", "hostile"]
 }

@@ -106,6 +106,7 @@ export interface VfxStudio {
 export type Phase =
   | "pitch"
   | "script"
+  | "development" // script approved, waiting for a producer (no burn)
   | "prepro"
   | "production"
   | "post"
@@ -113,6 +114,12 @@ export type Phase =
   | "distribute"
   | "done"
   | "cancelled";
+
+export interface ShotBlock {
+  location: number; // 1-based location index
+  days: number;
+  castIds: string[];
+}
 
 export interface Quality {
   script: number;
@@ -161,6 +168,9 @@ export interface Movie {
   setbackCount: number;
   awards: string[];
   screeningScore?: number;
+  estRevenue?: number; // rough projection shown in pitch/dossier
+  shotList?: ShotBlock[]; // built at pre-production wrap
+  pitchLogline?: string;
 }
 
 // ---------- studios ----------
@@ -171,9 +181,11 @@ export interface Studio {
   persona?: string; // rival policy archetype
   riskAppetite?: number;
   genreBias?: Record<string, number>;
-  history: { week: number; profit: number }[]; // weekly snapshots of profit-to-date
+  history: { week: number; profit: number }[]; // weekly snapshots of REPORTED profit
   totalRevenue: number;
-  totalSpent: number;
+  totalSpent: number; // real spend (private)
+  reportedSpend: number; // budgets posted as lump sums on release day (public)
+  bankrupt?: boolean;
 }
 
 // ---------- audience ----------

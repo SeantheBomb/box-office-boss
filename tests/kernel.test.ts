@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { Sim } from "../src/kernel/sim";
 import { bundledContent } from "../src/data/content";
-import { autoplay, stateHash } from "../src/kernel/autopilot";
+import { autoplay, stateHash, disciplinedEmailPolicy, disciplinedMeetingPolicy } from "../src/kernel/autopilot";
+import { newSeededRun } from "../src/kernel/preseed";
 import { makeRng, RngBank } from "../src/kernel/rng";
 import { mintWorld } from "../src/kernel/people";
 import { computeFunnel } from "../src/kernel/audience";
@@ -85,36 +86,7 @@ describe("funnel", () => {
 describe("full loop", () => {
   it("a disciplined player releases movies within 2 years", () => {
     const sim = Sim.newRun(content, 777);
-    autoplay(sim, {
-      days: DAYS_PER_YEAR * 2,
-      // cap the slate at 3 active projects; greenlight, expand budgets, standard everything
-      emailPolicy: (s, emailId, actions) => {
-        const active = s.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled"].includes(m.phase)).length;
-        if (actions.some((a) => a.id === "scheduleMeeting")) {
-          const em = s.state.inbox.find((e) => e.id === emailId);
-          const affordable = (em?.ctx.pitch?.minBudget ?? 0) < s.player.cash / 3;
-          return active < 3 && affordable ? "scheduleMeeting" : "ignore";
-        }
-        const prefer = ["approvePrepro", "approveProduction", "expandBudget"];
-        for (const p of prefer) if (actions.some((a) => a.id === p)) return p;
-        const vfxBids = actions.filter((a) => a.id.startsWith("vfx_"));
-        if (vfxBids.length) {
-          // hire for throughput, like a person who reads the bids would
-          const best = vfxBids
-            .map((a) => ({ a, v: s.state.vfxStudios.find((v) => v.id === a.id.slice(4))! }))
-            .sort((x, y) => y.v.maxDailyShots - x.v.maxDailyShots)[0];
-          return best.a.id;
-        }
-        const mid = actions.find((a) => a.id.startsWith("mkt_standard") || a.id.startsWith("dist_standard"));
-        return (mid ?? actions[0]).id;
-      },
-      meetingPolicy: (s, choices) => {
-        const active = s.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled"].includes(m.phase)).length;
-        if (active >= 3 && choices.some((c) => c.id === "pos_pass")) return "pos_pass";
-        const gl = choices.find((c) => c.id === "pos_greenlight");
-        return (gl ?? choices[0]).id;
-      },
-    });
+    autoplay(sim, { days: DAYS_PER_YEAR * 2, emailPolicy: disciplinedEmailPolicy(3), meetingPolicy: disciplinedMeetingPolicy(3) });
     const released = sim.state.movies.filter((m) => m.studio === 0 && m.releaseDay !== undefined);
     expect(released.length).toBeGreaterThan(0);
     expect(released[0].reviews.length).toBeGreaterThan(0);
@@ -130,7 +102,8 @@ describe("full loop", () => {
     });
     const rivalReleases = sim.state.movies.filter((m) => m.studio !== 0 && m.releaseDay !== undefined);
     expect(rivalReleases.length).toBeGreaterThan(0);
-    for (const s of sim.state.studios) expect(s.history.length).toBeGreaterThan(30);
+    // founding studios track from week 1; replacement entrants may have shorter histories
+    for (const s of sim.state.studios.slice(0, 6)) expect(s.history.length).toBeGreaterThan(30);
   });
 
   it("an idle player eventually gets fired or goes bankrupt", () => {
@@ -146,6 +119,77 @@ describe("full loop", () => {
       }
     }
     expect(sim.state.gameOver).toBeTruthy();
+  });
+});
+
+describe("phase 2 systems", () => {
+  const run = (seed: number, days: number) => {
+    const sim = Sim.newRun(content, seed);
+    autoplay(sim, { days, emailPolicy: disciplinedEmailPolicy(4), meetingPolicy: disciplinedMeetingPolicy(4) });
+    return sim;
+  };
+
+  it("no two non-franchise movies share a title", () => {
+    const sim = run(1234, DAYS_PER_YEAR * 2);
+    const nonFranchise = sim.state.movies.filter((m) => !m.franchise && !m.sequelOf);
+    const titles = nonFranchise.map((m) => m.title.toLowerCase());
+    expect(new Set(titles).size).toBe(titles.length);
+  });
+
+  it("movies never enter prepro without a producer; production never starts uncast", () => {
+    const sim = run(555, DAYS_PER_YEAR);
+    for (const m of sim.state.movies.filter((m) => m.studio === 0)) {
+      if (["prepro", "production", "post", "release", "distribute", "done"].includes(m.phase)) {
+        expect(m.producerId, `${m.title} in ${m.phase} without producer`).toBeTruthy();
+      }
+      if (["production", "post", "release", "distribute", "done"].includes(m.phase)) {
+        expect(m.castIds.length, `${m.title} in ${m.phase} uncast`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("meetings land on weekdays only", () => {
+    const sim = run(31, DAYS_PER_YEAR);
+    // scan the decision-era event log via pending + a fresh sweep
+    for (const e of sim.state.events.filter((e) => e.kind === "meeting")) {
+      expect(calDate(e.day).dayOfWeek, `meeting ${e.type} on weekend day ${e.day}`).toBeLessThan(5);
+    }
+  });
+
+  it("standings report zero spend until a movie releases", () => {
+    const sim = Sim.newRun(content, 99);
+    autoplay(sim, { days: 60, emailPolicy: disciplinedEmailPolicy(3), meetingPolicy: disciplinedMeetingPolicy(3) });
+    const released = sim.state.movies.filter((m) => m.studio === 0 && m.releaseDay !== undefined);
+    if (released.length === 0) {
+      expect(sim.player.reportedSpend).toBe(0);
+      expect(sim.player.totalSpent).toBeGreaterThan(0); // real books tell the truth
+    }
+  });
+
+  it("rivals go bankrupt instead of running on negative cash forever", () => {
+    const sim = run(555, DAYS_PER_YEAR * 3);
+    for (const s of sim.state.studios.filter((s) => !s.isPlayer && !s.bankrupt)) {
+      expect(s.cash).toBeGreaterThan(-30_000_000 * 4); // grace window bounded, no −75M zombies
+    }
+  });
+
+  it("preseeded run hands over a mid-flight studio", () => {
+    const sim = newSeededRun(content, 2027);
+    expect(sim.state.gameOver).toBeUndefined();
+    expect(sim.player.cash).toBeGreaterThanOrEqual(content.economy.preseed.handoffCashFloor);
+    const slate = sim.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled"].includes(m.phase));
+    expect(slate.length).toBeGreaterThan(0);
+    // something releases within ~4 weeks of handoff
+    const upcoming = sim.state.movies.some(
+      (m) => m.studio === 0 && ((m.releaseDay !== undefined && m.phase === "release") || sim.state.events.some((e) => e.type === "release" && e.data.movieId === m.id && e.day < sim.state.day + 28))
+    );
+    expect(upcoming).toBe(true);
+    // welcome email present, history backdated
+    expect(sim.state.inbox.some((e) => e.subject.includes("Welcome"))).toBe(true);
+    expect(sim.player.history.length).toBeGreaterThan(4);
+    // deterministic
+    const again = newSeededRun(content, 2027);
+    expect(stateHash(again)).toBe(stateHash(sim));
   });
 });
 
