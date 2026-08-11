@@ -29,7 +29,7 @@ function detectStaleSave(): boolean {
   try {
     const raw = localStorage.getItem("bob.save");
     if (!raw) return false;
-    return JSON.parse(raw).version !== 2;
+    return JSON.parse(raw).version !== 3;
   } catch {
     return false;
   }
