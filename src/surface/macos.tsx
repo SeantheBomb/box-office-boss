@@ -30,38 +30,62 @@ export function Onboarding({ onDone }: { onDone: (p: Profile) => void }) {
   const ready = boss.trim().length > 0 && studio.trim().length > 0;
   return (
     <div class={`onboarding wp-${wallpaper}`}>
-      <div class="onboard-card">
-        <div class="onboard-logo">🎬</div>
-        <h1>BossOS</h1>
-        <p class="onboard-sub">Before the town learns your name, tell it to the machine.</p>
-        <label>
-          Your name
-          <input value={boss} placeholder="e.g. Sam Sterling" maxLength={24} onInput={(e) => setBoss((e.target as HTMLInputElement).value)} />
-        </label>
-        <label>
-          Your studio
-          <input value={studio} placeholder="e.g. Sterling Pictures" maxLength={28} onInput={(e) => setStudio((e.target as HTMLInputElement).value)} />
-        </label>
-        <div class="onboard-wp-label">Desktop wallpaper</div>
-        <div class="onboard-wallpapers">
-          {WALLPAPERS.map((w) => (
-            <button key={w.id} class={`wp-thumb wp-${w.id} ${wallpaper === w.id ? "sel" : ""}`} title={w.name} onClick={() => setWallpaper(w.id)}>
-              <span>{w.name}</span>
-            </button>
-          ))}
+      <div class="title-card">
+        <div class="title-marquee">
+          <div class="title-kicker">A SATIRICAL HOLLYWOOD STUDIO SIM</div>
+          <h1 class="title-name">
+            <span>BOX OFFICE</span>
+            <span class="title-boss">BOSS</span>
+          </h1>
+          <div class="title-tag">Greenlight the hits. Survive the flops. Feed the egos.</div>
         </div>
-        <button
-          class="onboard-go"
-          disabled={!ready}
-          onClick={() => {
-            audio.unlock();
-            audio.sfx("success");
-            onDone({ boss: boss.trim(), studio: studio.trim(), wallpaper });
-          }}
-        >
-          Take the chair ▸
-        </button>
-        <p class="onboard-fine">You inherit a working studio: a mid-flight slate, two producers, and a board that believes in you (today).</p>
+        <div class="onboard-card wide">
+          <div class="onboard-cols">
+            <div class="onboard-how">
+              <h2>The job</h2>
+              <p>
+                You're the new head of a movie studio — mid-flight slate, two producers, a board that believes in you
+                (today). Five rival studios are chasing the same stars, the same weekends, and the same money.
+              </p>
+              <ul>
+                <li><b>✉ Work your inbox.</b> Pitches, setbacks, and results arrive as mail. Your replies are your decisions.</li>
+                <li><b>🎬 Take the meetings.</b> Writers, stars, agents, and the board sit across from you. You pick the line; <i>they</i> decide how it goes.</li>
+                <li><b>📦 Package pictures.</b> Pair scripts with directors, stars, and producers, then pick a release weekend the competition can't survive.</li>
+                <li><b>📈 Win Mondays.</b> The weekly box-office chart is the town's scoreboard. Go bankrupt — or exhaust the board's patience — and the chair is someone else's.</li>
+              </ul>
+              <p class="onboard-how-fine">Time runs while you work. Meetings pause it. The calendar warns you before it matters.</p>
+            </div>
+            <div class="onboard-form">
+              <label>
+                Your name
+                <input value={boss} placeholder="e.g. Sam Sterling" maxLength={24} onInput={(e) => setBoss((e.target as HTMLInputElement).value)} />
+              </label>
+              <label>
+                Your studio
+                <input value={studio} placeholder="e.g. Sterling Pictures" maxLength={28} onInput={(e) => setStudio((e.target as HTMLInputElement).value)} />
+              </label>
+              <div class="onboard-wp-label">Desktop wallpaper</div>
+              <div class="onboard-wallpapers">
+                {WALLPAPERS.map((w) => (
+                  <button key={w.id} class={`wp-thumb wp-${w.id} ${wallpaper === w.id ? "sel" : ""}`} title={w.name} onClick={() => setWallpaper(w.id)}>
+                    <span>{w.name}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                class="onboard-go"
+                disabled={!ready}
+                onClick={() => {
+                  audio.unlock();
+                  audio.sfx("success");
+                  onDone({ boss: boss.trim(), studio: studio.trim(), wallpaper });
+                }}
+              >
+                Take the chair ▸
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
