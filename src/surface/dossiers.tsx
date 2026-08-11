@@ -44,7 +44,8 @@ export function MovieDossier({ sim, movieId, openDossier, bump }: { sim: Sim; mo
       <section>
         <h4>The Pitch</h4>
         <table>
-          <tr><td>Genre</td><td>{m.genre} / {m.subgenre} · {m.estRating}</td></tr>
+          <tr><td>Identity</td><td><b>{sim.fusion(m)}</b> · {m.estRating}</td></tr>
+          <tr><td>Market read</td><td style={{ fontSize: 12 }}>{sim.heatReport(m)}</td></tr>
           {m.pitchLogline && <tr><td>Logline</td><td>"{m.pitchLogline}"</td></tr>}
           {m.franchise && <tr><td>Franchise</td><td>{m.franchise}</td></tr>}
           <tr><td>Written by</td><td><PersonLink sim={sim} id={m.writerId} openDossier={openDossier} /></td></tr>

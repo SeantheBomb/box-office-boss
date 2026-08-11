@@ -23,8 +23,8 @@ import {
   WEEKS_PER_SEASON,
 } from "./types";
 import { mintWorld } from "./people";
-import { mintPitch, mintSequelPitch, type PitchData } from "./pitchgen";
-import { computeFunnel, discover, initAudience, weeklyFadTick, type FunnelResult } from "./audience";
+import { mintPitch, mintSequelPitch, mintTitle, type PitchData } from "./pitchgen";
+import { computeFunnel, discover, initAudience, weeklyFadTick, movieHeat, type FunnelResult } from "./audience";
 import { bankLine, fill, money, count, selectLine } from "./text";
 import { mintVoice, voiceWrap, callbackLine, remember } from "./voice";
 
@@ -192,10 +192,30 @@ export class Sim {
     return this.state.people.filter((p) => p.role === "producer" && p.signedByStudio === 0);
   }
 
-  estimateRevenue(minBudget: number, genre: string): number {
+  estimateRevenue(minBudget: number, genre: string, pitchLike?: { genre: string; genre2?: string; topic?: string }): number {
     const mult = this.content.economy.revenueEstimate.genreMultiplier[genre] ?? 2.4;
-    const fad = this.state.audience.fads[genre] ?? 1;
-    return Math.round((minBudget * mult * (0.7 + fad * 0.3)) / 1e5) * 1e5;
+    // the projection breathes with the market: hot fusion = eye-watering number
+    const heat = pitchLike ? movieHeat(this.content, this.state, pitchLike) : (this.state.audience.fads[genre] ?? 1);
+    return Math.round((minBudget * mult * (0.4 + Math.pow(heat, 0.85) * 0.6)) / 1e5) * 1e5;
+  }
+
+  /** "Horror × Comedy · ZOMBIES" — the fusion identity, everywhere a movie is named. */
+  fusion(m: { genre: string; genre2?: string; topic?: string; subgenre?: string }): string {
+    const topicDef = (this.content.pitches.topics as any[])?.find((t) => t.id === m.topic);
+    const label = topicDef?.label?.toUpperCase() ?? (m.topic ? m.topic.toUpperCase() : m.subgenre);
+    return `${m.genre}${m.genre2 ? ` × ${m.genre2}` : ""}${label ? ` · ${label}` : ""}`;
+  }
+
+  /** Per-component market read for a movie/pitch — feeds probes, dossiers, and reports. */
+  heatReport(m: { genre: string; genre2?: string; topic?: string }): string {
+    const word = (v: number) => (v > 1.5 ? "ON FIRE" : v > 1.15 ? "hot" : v > 0.85 ? "steady" : v > 0.6 ? "cooling" : "ICE COLD");
+    const bits = [`${m.genre}: ${word(this.state.audience.fads[m.genre] ?? 1)}`];
+    if (m.genre2) bits.push(`${m.genre2}: ${word(this.state.audience.fads[m.genre2] ?? 1)}`);
+    if (m.topic) {
+      const t = (this.content.pitches.topics as any[])?.find((x) => x.id === m.topic);
+      bits.push(`${t?.label ?? m.topic}: ${word(this.state.audience.topicFads?.[m.topic] ?? 1)}`);
+    }
+    return bits.join(" · ");
   }
 
   // ---------- ids / events / email ----------
@@ -679,11 +699,22 @@ This column is never wrong. This column has been wrong twice this month.
 
   // ---------- movie creation & player pipeline ----------
   createMovie(studio: number, writer: Person, pitch: PitchData): Movie {
+    // last line of defense: two non-franchise pictures never share a marquee
+    if (!pitch.franchise && !pitch.sequelOf) {
+      const clash = this.state.movies.some((x) => !["cancelled"].includes(x.phase) && x.title.toLowerCase() === pitch.title.toLowerCase());
+      if (clash) {
+        const rng = this.rng.get("pitches");
+        const alt = mintTitle(rng, this.content, this.state, pitch.genre);
+        pitch = { ...pitch, title: alt };
+      }
+    }
     const m: Movie = {
       id: this.id("mv"),
       studio,
       title: pitch.title,
       genre: pitch.genre,
+      genre2: pitch.genre2,
+      topic: pitch.topic,
       subgenre: pitch.subgenre,
       estRating: pitch.estRating,
       franchise: pitch.franchise,
@@ -704,7 +735,7 @@ This column is never wrong. This column has been wrong twice this month.
       locations: 5,
       quality: { script: 0, direction: 0, performance: 0, vfx: 0, polish: 0 },
       pitchLogline: pitch.logline,
-      estRevenue: this.estimateRevenue(pitch.minBudget, pitch.genre),
+      estRevenue: this.estimateRevenue(pitch.minBudget, pitch.genre, pitch),
       hype: 15,
       marketing: 0,
       weeklyGross: [],
@@ -757,14 +788,14 @@ This column is never wrong. This column has been wrong twice this month.
     const frame = this.line("pitch-frame", {
       greeting,
       title: pitch.title,
-      genre: `${pitch.genre}/${pitch.subgenre}`,
+      genre: this.fusion(pitch),
       logline: pitch.logline,
       titleWords: pitch.title.split(/\s+/).length,
     });
     const rivalName = this.state.studios.filter((s) => !s.isPlayer && !s.bankrupt)[0]?.name ?? "the other guys";
     const body = `${frame}${pitch.franchise ? ` This slots right into ${pitch.franchise}.` : ""}\nBallpark: ${money(pitch.minBudget)} minimum budget · ~${money(
-      this.estimateRevenue(pitch.minBudget, pitch.genre)
-    )} box office if we don't blow it · roughly ${Math.round(roughDays / 7)} weeks pitch-to-print.\nGreenlighting a script runs ${money(
+      this.estimateRevenue(pitch.minBudget, pitch.genre, pitch)
+    )} box office if we don't blow it · roughly ${Math.round(roughDays / 7)} weeks pitch-to-print.\nMarket read: ${this.heatReport(pitch)}.\nGreenlighting a script runs ${money(
       pitch.minBudget * this.content.economy.phases.greenlightScriptFactor
     )}. ${this.line("pitch-close", { rival: rivalName })} ${this.line("writer-signoff")}`;
     this.pushEmail({
@@ -803,16 +834,22 @@ This column is never wrong. This column has been wrong twice this month.
     const prodDays = Math.round(((director?.avgLocations ?? 5) * this.content.economy.production.baseDaysPerLocation));
     const soonest = this.state.day + this.content.economy.phases.preproDays[0] + prodDays + this.content.economy.post.baseDays + 21;
     const d = calDate(this.weekday(soonest));
+    const producers = this.staffProducers();
+    const producerLines = producers
+      .map(
+        (p) =>
+          `   • ${p.name} — ${this.producerLoad(p.id)} active · timelines ×${(p.avgProdLength ?? 1).toFixed(2)} · costs ×${(p.avgProdCost ?? 1).toFixed(2)} · revenue ×${(p.avgProdRevenue ?? 1).toFixed(2)} · craft ${p.avgRating}/100`
+      )
+      .join("\n");
     const body =
       `Pages attached. My best work since the last one.\n` +
       `— ${m.title} (${m.genre}/${m.subgenre}, ${m.estRating}) · "${m.pitchLogline ?? "you read the pitch"}"\n` +
       `— Director attached: ${director ? `${director.name} (${director.archetype.replace(/-/g, " ")})` : "TBD"}\n` +
       `— Proposed cast: ${proposedCast.length ? proposedCast.map((c) => c.name).join(", ") : "open call"}\n` +
       `— Target ${m.targetLength} min · ~${m.estVfx} VFX shots · minimum budget ${money(m.minBudget)}\n` +
-      `— Projected box office: ~${money(m.estRevenue ?? this.estimateRevenue(m.minBudget, m.genre))}\n` +
+      `— Projected box office: ~${money(m.estRevenue ?? this.estimateRevenue(m.minBudget, m.genre, m))}\n` +
       `— Soonest realistic release: WK ${d.week} ${SEASONS[d.season]} YR ${d.year}\n\n` +
-      `Pre-production needs a PRODUCER on it (${money(cost)} to greenlight). Current staff loads below.`;
-    const producers = this.staffProducers();
+      `Pre-production needs a PRODUCER on it (${money(cost)} to greenlight). The staff sheet:\n${producerLines}`;
     const actions = producers.map((p) => ({
       id: `assignProducer_${p.id}`,
       label: `Assign ${p.name} (${this.producerLoad(p.id)} active${this.producerLoad(p.id) > this.content.economy.producers.idealLoad - 1 ? " ⚠" : ""}) — ${money(cost)}`,
@@ -825,7 +862,7 @@ This column is never wrong. This column has been wrong twice this month.
       subject: `${m.title}: the script is DONE`,
       body,
       actions,
-      ctx: { movieId: m.id },
+      ctx: { movieId: m.id, linkPeople: [...producers.map((p) => p.id), ...(director ? [director.id] : []), ...proposedCast.map((c) => c.id)] },
     });
   }
 
@@ -867,7 +904,7 @@ This column is never wrong. This column has been wrong twice this month.
       blocks.push({ location: loc, days: d, castIds: castNeeded.length ? castNeeded : m.castIds.slice(0, 1) });
     }
     m.shotList = blocks;
-    m.estRevenue = this.estimateRevenue(m.budget, m.genre);
+    m.estRevenue = this.estimateRevenue(m.budget, m.genre, m);
     const relDay = this.weekday(this.state.day + prodDays + this.content.economy.post.baseDays + Math.round(m.estVfx / 12) + 21);
     const rd = calDate(relDay);
     this.pushEmail({
@@ -1409,7 +1446,7 @@ This column is never wrong. This column has been wrong twice this month.
     if (actionId === "scheduleMeeting") {
       const lead = this.content.game.meetingLeadDays;
       const day = this.state.day + this.rng.get("schedule").int(lead[0], lead[1]);
-      this.bookMeeting(day, "morning", "pitch", { writerId: em.ctx.writerId, pitch: em.ctx.pitch });
+      this.bookMeeting(day, "morning", "pitch", { writerId: em.ctx.writerId, pitch: em.ctx.pitch, scouted: em.ctx.scouted });
     } else if (actionId === "ignore") {
       const w = this.person(em.ctx.writerId);
       if (w) w.relationship -= 4;
@@ -1554,6 +1591,20 @@ This column is never wrong. This column has been wrong twice this month.
       m.hype = Math.min(100, m.hype + tier.reach * 40);
       // release date options: 3 upcoming weekends across seasons
       const opts = this.releaseDateOptions();
+      const nearbyIds = [
+        ...new Set(
+          opts.flatMap((o) =>
+            this.state.movies
+              .filter(
+                (x) =>
+                  x.id !== m.id &&
+                  ((x.announcedRelease !== undefined && x.releaseDay === undefined && Math.abs(x.announcedRelease - o.day) < 14) ||
+                    (x.releaseDay !== undefined && x.phase === "release" && Math.abs((x.releaseDay ?? 0) - o.day) < 14))
+              )
+              .map((x) => x.id)
+          )
+        ),
+      ].slice(0, 5);
       this.pushEmail({
         from: "Distribution Desk",
         fromRole: "distribution",
@@ -1562,7 +1613,7 @@ This column is never wrong. This column has been wrong twice this month.
           .map((o) => `• ${o.label}`)
           .join("\n")}\nCrowded weekends split the take. Seasons matter. Choose wisely, or at least confidently.`,
         actions: opts.map((o) => ({ id: `rel_${o.day}`, label: o.label })),
-        ctx: { movieId: m.id, marketingTier: tierId },
+        ctx: { movieId: m.id, marketingTier: tierId, linkMovies: nearbyIds },
       });
     } else if (actionId.startsWith("rel_") && m) {
       const day = parseInt(actionId.slice(4), 10);
@@ -1630,6 +1681,27 @@ This column is never wrong. This column has been wrong twice this month.
       body: `${reason}\nWaiting for a producer: ${parked.map((m) => m.title).join(", ")}. Fresh assignment memos are in your inbox.`,
       actions: [],
       ctx: {},
+    });
+  }
+
+  outcome_scoutReturn(ev: SimEvent) {
+    const prod = this.person(ev.data.producerId);
+    if (!prod || prod.signedByStudio !== 0) return;
+    const rng = this.rng.get("pitches");
+    // scouts favor writers with craft — the producer's taste is the filter
+    const writers = this.state.people.filter((p) => p.role === "writer").sort((a, b) => (b.avgRating ?? 0) - (a.avgRating ?? 0));
+    const writer = rng.pick(writers.slice(0, Math.max(3, Math.round(writers.length * ((prod.avgRating ?? 50) / 100)))));
+    const pitch = mintPitch(rng, this.content, this.state, writer, 0);
+    this.pushEmail({
+      from: prod.name,
+      fromRole: "producer",
+      subject: `Found one: "${pitch.title}" (${pitch.hook})`,
+      body: `You sent me hunting. I came back with dinner.\n"${pitch.title}" — ${this.fusion(pitch)}. ${pitch.logline}.\nWriter: ${writer.name}. I've already softened them up — the meeting starts warm.\nMarket read: ${this.heatReport(pitch)}.\nBallpark ${money(pitch.minBudget)} · projected ~${money(this.estimateRevenue(pitch.minBudget, pitch.genre, pitch))}.`,
+      actions: [
+        { id: "scheduleMeeting", label: "Take the meeting (starts warm — they came to us)" },
+        { id: "ignore", label: "Not this one" },
+      ],
+      ctx: { writerId: writer.id, pitch, scouted: true, linkPeople: [writer.id, prod.id] },
     });
   }
 

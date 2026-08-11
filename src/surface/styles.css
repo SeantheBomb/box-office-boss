@@ -759,3 +759,19 @@ body { background: #171512; color: var(--ink); overflow: hidden; }
   font-family: "Segoe Script", "Comic Sans MS", cursive;
 }
 .inbox-read.fmt-note h3 { font-family: inherit; }
+
+/* ---- The Dossier app ---- */
+.dossier-app { display: flex; flex-direction: column; height: 100%; background: #14161a; }
+.dossier-toolbar { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid #262b33; align-items: center; }
+.dossier-toolbar input { flex: 1; background: #1d2129; border: 1px solid #2e3542; color: #dfe5ee; border-radius: 6px; padding: 6px 10px; font: inherit; font-size: 12px; }
+.dossier-toolbar input:focus { outline: none; border-color: #4a7cc9; }
+.doss-back { background: #1d2129; border: 1px solid #2e3542; color: #dfe5ee; border-radius: 6px; width: 28px; height: 28px; font-size: 16px; cursor: pointer; line-height: 1; }
+.doss-back:hover { background: #2a3140; }
+.dossier-results { overflow-y: auto; flex: 1; padding: 6px; }
+.dossier-result { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; cursor: pointer; }
+.dossier-result:hover { background: #1f2531; }
+.dossier-result b { display: block; color: #e8edf5; font-size: 13px; }
+.dossier-result i { display: block; color: #7d8794; font-size: 11px; font-style: normal; }
+.dossier-film { width: 36px; height: 36px; display: grid; place-items: center; background: #1d2129; border-radius: 8px; font-size: 18px; }
+.dossier-none { color: #7d8794; font-size: 12px; padding: 14px; font-style: italic; }
+.dossier-app .report-sheet.windowed { flex: 1; overflow-y: auto; }

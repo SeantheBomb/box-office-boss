@@ -146,7 +146,7 @@ export function WeekChart({ sim, openDossier }: { sim: Sim; openDossier?: (kind:
           return (
             <tr key={row.movieId} style={mine ? { background: "#fdf3d0", fontWeight: "bold" } : undefined}>
               <td>{i + 1}</td>
-              <td style={openDossier ? { cursor: "pointer", textDecoration: "underline" } : undefined} onClick={() => openDossier?.("movie", m.id)}>{m.title}</td>
+              <td title={sim.fusion(m)} style={openDossier ? { cursor: "pointer", textDecoration: "underline" } : undefined} onClick={() => openDossier?.("movie", m.id)}>{m.title}</td>
               <td>{sim.state.studios[m.studio].name.split(" ")[0]}{mine ? " ★" : ""}</td>
               <td>{money(row.gross)}</td>
               <td>{money(m.weeklyGross.reduce((a, b) => a + b, 0))}</td>
@@ -367,7 +367,32 @@ export function AudienceReport({ sim }: { sim: Sim }) {
           ))}
         </tbody>
       </table>
-      <h3 style={{ marginTop: 14 }}>Fad Tracker</h3>
+      <h3 style={{ marginTop: 14 }}>Topic Tracker — the boom/bust board</h3>
+      <table>
+        <tbody>
+          {Object.entries(sim.state.audience.topicFads ?? {})
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([id, v]) => {
+              const t = (sim.content.pitches.topics as any[])?.find((x) => x.id === id);
+              const inProd = sim.state.movies.filter((m) => m.topic === id && ["script", "prepro", "production", "post"].includes(m.phase)).length;
+              return (
+                <tr key={id}>
+                  <td><b>{t?.label ?? id}</b></td>
+                  <td style={{ color: v > 1.5 ? "#a33327" : v > 1.1 ? "#8a6a10" : "#666" }}>
+                    {v > 1.8 ? "🔥 ON FIRE" : v > 1.3 ? "▲▲ booming" : v > 1.05 ? "▲ warm" : v > 0.7 ? "— steady" : "▼ bust"}
+                  </td>
+                  <td>{"█".repeat(Math.max(1, Math.round(v * 4)))}</td>
+                  <td style={{ fontSize: 11, color: "#666" }}>{inProd ? `${inProd} in production — saturation ahead` : "open water"}</td>
+                </tr>
+              );
+            })}
+        </tbody>
+      </table>
+      <p style={{ fontSize: 11, color: "#666", margin: "4px 0 10px" }}>
+        Topics spike harder and die faster than genres. Genre × genre × topic all hot = a phenomenon; releases burn their own topic down. Time the wave.
+      </p>
+      <h3 style={{ marginTop: 14 }}>Genre Fads</h3>
       <table>
         <tbody>
           {fads.map(([g, v]) => {

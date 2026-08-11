@@ -48,7 +48,7 @@ export function useWindows() {
     const id = opts.id ?? app;
     setWins((ws) => {
       const existing = ws.find((w) => w.id === id);
-      if (existing) return ws.map((w) => (w.id === id ? { ...w, min: false, z: topZ() } : w));
+      if (existing) return ws.map((w) => (w.id === id ? { ...w, min: false, z: topZ(), title: title ?? w.title, props: opts.props ?? w.props } : w));
       const cascade = (ws.length % 8) * 24;
       return [
         ...ws,

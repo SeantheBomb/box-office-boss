@@ -1,15 +1,13 @@
 // Bump BUILD_VERSION every deploy; players get a studio-memo popup with the changelog.
 // SAVE_VERSION lives in kernel/save.ts — when it bumps, the popup explains the save reset.
 
-export const BUILD_VERSION = "0.5.0";
+export const BUILD_VERSION = "0.6.0";
 
 export const CHANGELOG: string[] = [
-  "THE WRITING OVERHAUL: meetings are now real conversations — read their mood at the door, schmooze at your own risk (their personality decides what lands), then get down to business and haggle the fine print.",
-  "RAPPORT & TELLS: a visible needle and body-language reads track how the room feels. A worn-out counterpart can walk on a full-price offer; a charmed one forgives a lowball.",
-  "INTEL & LEVERAGE: lunches and the new Whisper Column bank intel you can SPEND in meetings — gossip in the schmooze, hardball at the table. Locked options show you exactly what you're missing. (The gossip columnist is sometimes wrong. Find out the hard way.)",
-  "CONTRACTS WITH TEETH: deals close with real clauses — backend points, sequel options, script approval — tracked as promises the game collects on later. Break one and the whole town hears.",
-  "THEY REMEMBER: everyone keeps a memory of what you did — greenlights, lowballs, turned-over phones — and it colors every future greeting, email, and negotiation. Your studio now has a town-wide reputation (pays well / on time / prestige / loyalty) that opens and closes doors.",
-  "EVERY VOICE ITS OWN: each person now has a permanent voice — catchphrase, sign-off, pet metaphor, tone — across every email and meeting. Trade coverage carries real columnist bylines; board memos, trade clippings, and handwritten diva notes each get their own stationery.",
-  "SMARTER WORDS: a vector embedding trained on 1,350 TMDB films now drives titles, loglines, and pitches — genre-true words that cohere with each other, real-keyword premise collisions, and 80+ new bank lines with seasonal variants.",
-  "OPTIONAL: ⏱ Timed choices for tense moments (Telltale mode) — toggle in the Desk Drawer.",
+  "BOOM OR BUST: movies are now a GENRE × GENRE × TOPIC fusion (Horror × Comedy · ZOMBIES). Topics trend on their own — spikier and meaner than genres — and when all three line up hot, the multiplier goes EXPONENTIAL. When they don't… well. The Audience app has a new Topic Tracker board.",
+  "THE DOSSIER: one searchable app for every file in the game. Search anyone or anything — people, pictures, genres, topics — and every 📁 link in every email and meeting now opens straight to the file, with a back button to retrace the trail.",
+  "CROSS-REFERENCE EVERYTHING: producer stat sheets right in the assignment email, rival releases linked from the pick-a-date email, and a Referenced: row of one-click files on the mail that matters.",
+  "STANDUP WITH TEETH: idle producers can now be handed a shelved project, sent out to SCOUT a pitch for next week (they come back with dinner — and the meeting starts warm), or fired on the spot (severance applies; the room notices).",
+  "SET VISITS THAT MATTER: production reviews now read the ACTUAL state of the shoot — real friction, real overruns, real scope creep. And when nothing's on fire, a healthy set is leverage: praise the room, push the pace, or commission a showpiece scene.",
+  "NO MORE DOPPELGÄNGERS: duplicate movie titles and twin VFX studios have been escorted off the lot.",
 ];

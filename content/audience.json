@@ -1,12 +1,95 @@
 {
   "segments": [
-    { "id": "teens", "name": "Teens", "size": 24, "channelTheater": 0.75, "criticWeight": 0.15, "genreAffinity": { "Action": 0.8, "Horror": 0.8, "Comedy": 0.6, "Sci-Fi": 0.7, "Family": 0.2, "Drama": 0.2, "Thriller": 0.5, "Western": 0.15 } },
-    { "id": "datenight", "name": "Date-Night", "size": 30, "channelTheater": 0.65, "criticWeight": 0.35, "genreAffinity": { "Comedy": 0.8, "Thriller": 0.6, "Action": 0.55, "Horror": 0.5, "Drama": 0.5, "Sci-Fi": 0.45, "Family": 0.25, "Western": 0.3 } },
-    { "id": "genreheads", "name": "Genre-Heads", "size": 14, "channelTheater": 0.55, "criticWeight": 0.25, "genreAffinity": { "Horror": 0.9, "Sci-Fi": 0.9, "Western": 0.7, "Action": 0.6, "Thriller": 0.7, "Comedy": 0.35, "Drama": 0.3, "Family": 0.1 } },
-    { "id": "families", "name": "Families", "size": 34, "channelTheater": 0.5, "criticWeight": 0.2, "genreAffinity": { "Family": 0.95, "Comedy": 0.55, "Action": 0.4, "Sci-Fi": 0.4, "Drama": 0.3, "Thriller": 0.1, "Horror": 0.02, "Western": 0.2 } },
-    { "id": "prestige", "name": "Prestige-Chasers", "size": 12, "channelTheater": 0.6, "criticWeight": 0.85, "genreAffinity": { "Drama": 0.9, "Thriller": 0.6, "Western": 0.55, "Sci-Fi": 0.45, "Comedy": 0.4, "Horror": 0.25, "Action": 0.3, "Family": 0.2 } }
+    {
+      "id": "teens",
+      "name": "Teens",
+      "size": 24,
+      "channelTheater": 0.75,
+      "criticWeight": 0.15,
+      "genreAffinity": {
+        "Action": 0.8,
+        "Horror": 0.8,
+        "Comedy": 0.6,
+        "Sci-Fi": 0.7,
+        "Family": 0.2,
+        "Drama": 0.2,
+        "Thriller": 0.5,
+        "Western": 0.15
+      }
+    },
+    {
+      "id": "datenight",
+      "name": "Date-Night",
+      "size": 30,
+      "channelTheater": 0.65,
+      "criticWeight": 0.35,
+      "genreAffinity": {
+        "Comedy": 0.8,
+        "Thriller": 0.6,
+        "Action": 0.55,
+        "Horror": 0.5,
+        "Drama": 0.5,
+        "Sci-Fi": 0.45,
+        "Family": 0.25,
+        "Western": 0.3
+      }
+    },
+    {
+      "id": "genreheads",
+      "name": "Genre-Heads",
+      "size": 14,
+      "channelTheater": 0.55,
+      "criticWeight": 0.25,
+      "genreAffinity": {
+        "Horror": 0.9,
+        "Sci-Fi": 0.9,
+        "Western": 0.7,
+        "Action": 0.6,
+        "Thriller": 0.7,
+        "Comedy": 0.35,
+        "Drama": 0.3,
+        "Family": 0.1
+      }
+    },
+    {
+      "id": "families",
+      "name": "Families",
+      "size": 34,
+      "channelTheater": 0.5,
+      "criticWeight": 0.2,
+      "genreAffinity": {
+        "Family": 0.95,
+        "Comedy": 0.55,
+        "Action": 0.4,
+        "Sci-Fi": 0.4,
+        "Drama": 0.3,
+        "Thriller": 0.1,
+        "Horror": 0.02,
+        "Western": 0.2
+      }
+    },
+    {
+      "id": "prestige",
+      "name": "Prestige-Chasers",
+      "size": 12,
+      "channelTheater": 0.6,
+      "criticWeight": 0.85,
+      "genreAffinity": {
+        "Drama": 0.9,
+        "Thriller": 0.6,
+        "Western": 0.55,
+        "Sci-Fi": 0.45,
+        "Comedy": 0.4,
+        "Horror": 0.25,
+        "Action": 0.3,
+        "Family": 0.2
+      }
+    }
   ],
-  "discovery": { "likeThreshold": 0.6, "dislikeThreshold": 0.35 },
+  "discovery": {
+    "likeThreshold": 0.6,
+    "dislikeThreshold": 0.35
+  },
   "fads": {
     "sparkChance": 0.03,
     "spikeAmount": 0.6,
@@ -15,6 +98,25 @@
     "min": 0.5,
     "max": 2.0
   },
-  "wordOfMouth": { "fanScoreWeight": 0.6, "criticWeight": 0.4 },
-  "franchiseLoyalty": 0.35
+  "wordOfMouth": {
+    "fanScoreWeight": 0.6,
+    "criticWeight": 0.4
+  },
+  "franchiseLoyalty": 0.35,
+  "topicFads": {
+    "sparkChance": 0.03,
+    "spikeAmount": 1.3,
+    "decayPerWeek": 0.12,
+    "saturationPerRelease": 0.55,
+    "min": 0.3,
+    "max": 2.8
+  },
+  "fusion": {
+    "confusionPenalty": 0.35,
+    "resonanceBonus": 0.18,
+    "heatFloor": 0.15,
+    "heatCeil": 6.0,
+    "g2Power": 0.8,
+    "topicPower": 1.3
+  }
 }

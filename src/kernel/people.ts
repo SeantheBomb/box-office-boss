@@ -117,13 +117,29 @@ export function mintWorld(rng: Rng, content: Content): { people: Person[]; vfxSt
     ["critic", c.critics],
     ["agent", c.agents ?? 6],
   ];
-  for (const [role, n] of roles) for (let i = 0; i < n; i++) people.push(mintPerson(rng, content, role));
+  const usedNames = new Set<string>();
+  for (const [role, n] of roles)
+    for (let i = 0; i < n; i++) {
+      const p = mintPerson(rng, content, role);
+      // nobody in this town shares a name — remint on collision
+      for (let tries = 0; tries < 12 && usedNames.has(p.name); tries++) p.name = mintName(rng, content.people.nameBanks, p.gender, (content as any).inspiration);
+      usedNames.add(p.name);
+      people.push(p);
+    }
   // everybody who matters is repped
   const agents = people.filter((p) => p.role === "agent");
   for (const p of people) {
     if (p.role === "cast" || p.role === "director") p.agentId = rng.pick(agents).id;
   }
   const vfxStudios: VfxStudio[] = [];
-  for (let i = 0; i < c.vfx; i++) vfxStudios.push(mintVfxStudio(rng, content));
+  const usedVfx = new Set<string>();
+  for (let i = 0; i < c.vfx; i++) {
+    const v = mintVfxStudio(rng, content);
+    for (let tries = 0; tries < 12 && usedVfx.has(v.name); tries++) {
+      v.name = `${rng.pick(content.people.nameBanks.vfxPrefix as string[])} ${rng.pick(content.people.nameBanks.vfxSuffix as string[])}`;
+    }
+    usedVfx.add(v.name);
+    vfxStudios.push(v);
+  }
   return { people, vfxStudios };
 }

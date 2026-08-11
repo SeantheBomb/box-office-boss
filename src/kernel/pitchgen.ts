@@ -6,6 +6,8 @@ import type { Content, Movie, Person, RunState } from "./types";
 export interface PitchData {
   title: string;
   genre: string;
+  genre2?: string;
+  topic?: string;
   subgenre: string;
   estRating: string;
   targetLength: number;
@@ -78,7 +80,7 @@ export function mintTitle(rng: Rng, content: Content, state?: RunState, genre?: 
   let title = make();
   for (let i = 0; i < 30 && used.has(title.toLowerCase()); i++) title = make();
   if (used.has(title.toLowerCase())) title = `${title} (${rng.int(2, 99)})`; // pathological fallback
-  return title.replace(/A ([AEIOU])/g, "An $1"); // article agreement
+  return title.replace(/\bA ([AEIOU])/g, "An $1"); // article agreement
 }
 
 export function mintPitch(rng: Rng, content: Content, state: RunState, writer: Person, forStudio: number): PitchData {
@@ -87,7 +89,14 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
   // writers chase fads a bit
   const genre = rng.pickWeighted(genres, (g) => (state.audience.fads[g] ?? 1) ** 2);
   const G = P.genres[genre];
-  const subgenre = rng.pick(G.subgenres as string[]);
+  // FUSION: a second genre (writers chase what's tracking) + a tracked topic
+  const allGenres = Object.keys(P.genres).filter((g) => g !== genre);
+  const genre2 = rng.pickWeighted(allGenres, (g) => (state.audience.fads[g] ?? 1) ** 1.5);
+  const topics: any[] = P.topics ?? [];
+  const topicDef = topics.length
+    ? rng.pickWeighted(topics, (t) => ((state.audience.topicFads?.[t.id] ?? 1) ** 1.5) * (t.genres?.includes(genre) || t.genres?.includes(genre2) ? 2.2 : 0.7))
+    : undefined;
+  const subgenre = topicDef?.label ?? rng.pick(G.subgenres as string[]);
   const budgetSpan = G.budget as [number, number];
   const minBudget = Math.round((budgetSpan[0] + rng.next() * (budgetSpan[1] - budgetSpan[0])) / 250000) * 250000;
   const directors = state.people.filter((p) => p.role === "director" && p.alive);
@@ -144,6 +153,8 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
   return {
     title,
     genre,
+    genre2,
+    topic: topicDef?.id,
     subgenre,
     estRating: rng.pick(G.ratings as string[]),
     targetLength: Math.round(G.length[0] + rng.next() * (G.length[1] - G.length[0])),
@@ -164,6 +175,8 @@ export function mintSequelPitch(rng: Rng, content: Content, state: RunState, par
   return {
     title: `${baseTitle} ${sub}`,
     genre: parent.genre,
+    genre2: parent.genre2,
+    topic: parent.topic,
     subgenre: parent.subgenre,
     estRating: parent.estRating,
     targetLength: parent.targetLength,

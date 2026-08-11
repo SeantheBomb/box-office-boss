@@ -114,6 +114,23 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
           </>
         )}
       </div>
+      {(email.ctx.linkPeople?.length || email.ctx.linkMovies?.length) ? (
+        <div class="meta" style={{ marginTop: 2 }}>
+          Referenced:{" "}
+          {(email.ctx.linkPeople ?? []).map((pid: string) => {
+            const p = sim.person(pid);
+            return p ? (
+              <a key={pid} class="doss-link" style={{ marginRight: 8 }} onClick={() => openDossier("person", pid)}>👤 {p.name}</a>
+            ) : null;
+          })}
+          {(email.ctx.linkMovies ?? []).map((mid: string) => {
+            const m = sim.movie(mid);
+            return m ? (
+              <a key={mid} class="doss-link" style={{ marginRight: 8 }} onClick={() => openDossier("movie", mid)}>🎞 {m.title}</a>
+            ) : null;
+          })}
+        </div>
+      ) : null}
       <div class="body">{email.body}</div>
       {email.embed?.kind === "standings" && (
         <div style={{ background: "#faf6ec", color: "#1c1a17", padding: 8, marginTop: 10 }}>

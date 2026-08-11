@@ -157,6 +157,8 @@ export interface Movie {
   studio: number; // index into studios
   title: string;
   genre: string;
+  genre2?: string; // fusion partner — every picture is two genres and a topic
+  topic?: string; // the tracked subject: submarines, vampires, heists…
   subgenre: string;
   estRating: string; // G/PG/PG-13/R
   franchise?: string;
@@ -235,7 +237,8 @@ export interface Segment {
 
 export interface AudienceState {
   segments: Segment[];
-  fads: Record<string, number>; // genre -> heat 0..2 (1 = neutral)
+  fads: Record<string, number>; // genre -> heat (1 = neutral)
+  topicFads?: Record<string, number>; // topic -> heat; spikier than genres — boom or bust
 }
 
 // ---------- calendar events ----------

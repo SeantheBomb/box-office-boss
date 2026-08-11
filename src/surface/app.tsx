@@ -16,6 +16,7 @@ import { MailApp } from "./mail";
 import { CalendarApp } from "./calendar";
 import { StandingsChart, ProductionBoard, AudienceReport, WeekChart, MandateBoard, TownReport } from "./reports";
 import { MovieDossier, PersonDossier } from "./dossiers";
+import { DossierApp } from "./dossierapp";
 import { audio } from "./audio";
 import { MenuBar, Dock, ToastStack, Onboarding, type Profile, type Toast } from "./macos";
 
@@ -25,6 +26,7 @@ const APPS: { app: string; title: string; icon: string; w?: number; h?: number }
   { app: "board", title: "🎬 Production Board", icon: "🎬", w: 680, h: 430 },
   { app: "standings", title: "📈 Standings", icon: "📈", w: 660, h: 480 },
   { app: "audience", title: "👥 Audience", icon: "👥", w: 620, h: 420 },
+  { app: "dossier", title: "🗂 The Dossier", icon: "🗂", w: 520, h: 540 },
 ];
 
 function detectStaleSave(): boolean {
@@ -77,9 +79,10 @@ export function App({ content }: { content: Content }) {
   };
 
   const openDossier = (kind: "movie" | "person", id: string) => {
-    const title = kind === "movie" ? `📁 ${simRef.current?.movie(id)?.title ?? "?"}` : `👤 ${simRef.current?.person(id)?.name ?? "?"}`;
+    // every entity link in the game lands in THE Dossier — one app, searchable, with a back-trail
+    const name = kind === "movie" ? simRef.current?.movie(id)?.title : simRef.current?.person(id)?.name;
     audio.sfx("window_open", 0.7);
-    wm.open(kind === "movie" ? "movieDossier" : "personDossier", title, { id: `${kind}:${id}`, props: { id }, w: 470, h: 500 });
+    wm.open("dossier", `🗂 ${name ?? "The Dossier"}`, { id: "dossier", props: { kind, id }, w: 520, h: 540 });
   };
 
   const collectMeetings = (meetings: SimEvent[]) => {
@@ -310,6 +313,8 @@ export function App({ content }: { content: Content }) {
             <AudienceReport sim={sim} />
           </div>
         );
+      case "dossier":
+        return <DossierApp sim={sim} kind={props?.kind} id={props?.id} openDossier={openDossier} bump={bump} />;
       case "movieDossier":
         return (
           <div class="report-sheet windowed">
@@ -371,7 +376,7 @@ export function App({ content }: { content: Content }) {
           </div>
         )}
         {wm.wins
-          .filter((w) => meetingQueue.length === 0 || w.app === "movieDossier" || w.app === "personDossier")
+          .filter((w) => meetingQueue.length === 0 || w.app === "dossier" || w.app === "movieDossier" || w.app === "personDossier")
           .map((w) => (
             <Window
               key={w.id}

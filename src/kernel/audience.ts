@@ -27,7 +27,20 @@ export function initAudience(rng: Rng, content: Content): AudienceState {
   });
   const fads: Record<string, number> = {};
   for (const g of Object.keys(content.pitches.genres)) fads[g] = 1;
-  return { segments, fads };
+  const topicFads: Record<string, number> = {};
+  for (const t of content.pitches.topics ?? []) topicFads[t.id] = 0.85 + rng.next() * 0.4;
+  return { segments, fads, topicFads };
+}
+
+/** Combined market heat for a picture: genre × genre × topic, MULTIPLICATIVE.
+ *  All three tracking hot = a phenomenon. All three cold = a funeral. Boom or bust. */
+export function movieHeat(content: Content, state: RunState, m: { genre: string; genre2?: string; topic?: string }): number {
+  const F = content.audience.fusion ?? { heatFloor: 0.15, heatCeil: 6, g2Power: 0.8, topicPower: 1.3 };
+  const f1 = state.audience.fads[m.genre] ?? 1;
+  const f2 = m.genre2 ? (state.audience.fads[m.genre2] ?? 1) : 1;
+  const ft = m.topic ? (state.audience.topicFads?.[m.topic] ?? 1) : 1;
+  const heat = f1 * Math.pow(f2, F.g2Power) * Math.pow(ft, F.topicPower);
+  return Math.max(F.heatFloor, Math.min(F.heatCeil, heat));
 }
 
 export function weeklyFadTick(rng: Rng, content: Content, aud: AudienceState) {
@@ -37,6 +50,16 @@ export function weeklyFadTick(rng: Rng, content: Content, aud: AudienceState) {
     v += (1 - v) * F.decayPerWeek; // regress to neutral
     if (rng.chance(F.sparkChance)) v += F.spikeAmount;
     aud.fads[g] = Math.min(F.max, Math.max(F.min, v));
+  }
+  // topics run hotter and die faster — the boom/bust layer
+  const T = content.audience.topicFads ?? F;
+  aud.topicFads ??= {};
+  for (const t of content.pitches.topics ?? []) aud.topicFads[t.id] ??= 1;
+  for (const k of Object.keys(aud.topicFads)) {
+    let v = aud.topicFads[k];
+    v += (1 - v) * T.decayPerWeek;
+    if (rng.chance(T.sparkChance)) v += T.spikeAmount;
+    aud.topicFads[k] = Math.min(T.max, Math.max(T.min, v));
   }
 }
 
@@ -71,10 +94,17 @@ export function computeFunnel(content: Content, state: RunState, movie: Movie, m
     const franchiseBonus = movie.franchise ? A.franchiseLoyalty * (seg.hiddenGenres[movie.genre] ?? 0.4) : 0;
     const segFans = potential * Math.min(0.6, 0.03 + fameFactor * 0.12 + franchiseBonus);
     const segReached = segFans + (potential - segFans) * marketingReach * (0.4 + movie.hype / 160);
-    const affinity = seg.hiddenGenres[movie.genre] ?? 0.4;
-    const fad = state.audience.fads[movie.genre] ?? 1;
+    // fusion affinity: two genres blend; wildly mismatched pairs confuse a segment,
+    // twin passions resonate
+    const FU = content.audience.fusion ?? { confusionPenalty: 0.35, resonanceBonus: 0.18 };
+    const a1 = seg.hiddenGenres[movie.genre] ?? 0.4;
+    const a2 = movie.genre2 ? (seg.hiddenGenres[movie.genre2] ?? 0.4) : a1;
+    let affinity = (a1 + a2) / 2 - Math.abs(a1 - a2) * FU.confusionPenalty;
+    if (a1 > 0.6 && a2 > 0.6) affinity += FU.resonanceBonus;
+    affinity = Math.max(0.03, affinity);
+    const heat = movieHeat(content, state, movie);
     const criticPull = seg.criticWeight * (stars / 5) + (1 - seg.criticWeight) * wom;
-    const segInterested = segReached * affinity * Math.min(1.6, fad) * (0.35 + criticPull * 0.75);
+    const segInterested = segReached * affinity * heat * (0.35 + criticPull * 0.75);
     const segTickets = segInterested * seg.channelTheater;
     fans += segFans;
     reached += segReached;
@@ -112,7 +142,12 @@ export function discover(content: Content, state: RunState, movie: Movie) {
       if (movie.franchise) seg.franchises[movie.franchise] = verdict;
     }
   }
-  // saturation: a release cools its genre's fad
+  // saturation: a release cools its genres — and its topic HARD (booms bust themselves)
   const F = content.audience.fads;
   state.audience.fads[movie.genre] = Math.max(F.min, (state.audience.fads[movie.genre] ?? 1) - F.saturationPerRelease * 0.5);
+  if (movie.genre2) state.audience.fads[movie.genre2] = Math.max(F.min, (state.audience.fads[movie.genre2] ?? 1) - F.saturationPerRelease * 0.3);
+  const T = content.audience.topicFads;
+  if (movie.topic && T && state.audience.topicFads) {
+    state.audience.topicFads[movie.topic] = Math.max(T.min, (state.audience.topicFads[movie.topic] ?? 1) - T.saturationPerRelease);
+  }
 }
