@@ -6,7 +6,20 @@ const SKINS = ["#f2c9a0", "#e0ac69", "#c68642", "#8d5524", "#f8d9c0", "#a3705a"]
 const HAIRС = ["#2c1b10", "#4a3220", "#c9a227", "#8a8a8a", "#b5651d", "#151515", "#7a2c1a", "#d8d8d8"];
 const BGS = ["#2e5266", "#6d3a5d", "#3f6d3a", "#8a5a2c", "#4a4a6d", "#6d4a2c"];
 
-export function Portrait({ seed, size = 72, mood = 0 }: { seed: number; size?: number; mood?: number }) {
+// Per-role visual language so you can read who you're talking to at a glance:
+// cast = gold star frame + glamour glow · director = viewfinder + beret + slate corner
+// writer = notebook edge + pencil behind ear · producer = pinstripe corner + cigar? no — clipboard
+// vfx = wireframe corner · critic = monocle chain + quill corner
+const ROLE_FRAME: Record<string, string> = {
+  cast: "#e8c14a",
+  director: "#4a90d9",
+  writer: "#7ac74f",
+  producer: "#c9a227",
+  critic: "#b06ad9",
+  vfx: "#5ad9c9",
+};
+
+export function Portrait({ seed, size = 72, mood = 0, role }: { seed: number; size?: number; mood?: number; role?: string }) {
   const rng = makeRng(seed);
   const bg = rng.pick(BGS);
   const skin = rng.pick(SKINS);
@@ -20,8 +33,9 @@ export function Portrait({ seed, size = 72, mood = 0 }: { seed: number; size?: n
   const earrings = rng.chance(0.2);
   const mouthCurve = mood > 0 ? 6 : mood < 0 ? -5 : rng.int(-2, 4);
   const faceW = 30 + rng.int(-3, 4);
+  const frame = role ? ROLE_FRAME[role] : undefined;
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" style={{ borderRadius: 8, boxShadow: "0 3px 10px rgba(0,0,0,0.5)" }}>
+    <svg width={size} height={size} viewBox="0 0 100 100" style={{ borderRadius: 8, boxShadow: "0 3px 10px rgba(0,0,0,0.5)", border: frame ? `2px solid ${frame}` : undefined }}>
       <rect width="100" height="100" fill={bg} />
       {/* shoulders */}
       <ellipse cx="50" cy="102" rx="34" ry="22" fill={rng.pick(["#2c2c30", "#57402a", "#6d1f1f", "#1d3a5a"])} />
@@ -51,6 +65,42 @@ export function Portrait({ seed, size = 72, mood = 0 }: { seed: number; size?: n
       <path d={`M42,${64} Q50,${64 + mouthCurve} 58,${64}`} stroke="#7a3a30" stroke-width="2.5" fill="none" />
       {facial && <path d={`M40,66 Q50,${76 + mouthCurve / 2} 60,66 L60,72 Q50,80 40,72 Z`} fill={hair} opacity="0.85" />}
       {earrings && <circle cx={50 - faceW} cy="58" r="2.5" fill="#e8c14a" />}
+      {/* role signifiers */}
+      {role === "cast" && (
+        <g>
+          <path d="M8,10 l2.4,4.9 5.4,.8 -3.9,3.8 .9,5.4 -4.8,-2.5 -4.8,2.5 .9,-5.4 -3.9,-3.8 5.4,-.8 Z" fill="#e8c14a" />
+          <ellipse cx="50" cy="48" rx={faceW + 4} ry="34" fill="none" stroke="#e8c14a55" stroke-width="3" />
+        </g>
+      )}
+      {role === "director" && (
+        <g>
+          <path d={`M${50 - faceW + 2},22 Q50,6 ${50 + faceW - 2},20 L${50 + faceW - 6},28 Q50,16 ${50 - faceW + 6},30 Z`} fill="#2c2c30" />
+          <circle cx={50 + faceW - 4} cy="18" r="4" fill="#2c2c30" />
+          <rect x="4" y="78" width="26" height="16" rx="2" fill="#1c1a17" stroke="#fff" stroke-width="1" />
+          <path d="M4,84 l26,0 M9,78 l5,6 M17,78 l5,6 M25,78 l5,6" stroke="#fff" stroke-width="1" />
+        </g>
+      )}
+      {role === "writer" && (
+        <g>
+          <rect x={50 + eyeDx + 8} y={eyeY - 14} width="4" height="14" rx="1.5" fill="#c9a227" transform={`rotate(20 ${50 + eyeDx + 10} ${eyeY - 7})`} />
+          <rect x="70" y="80" width="26" height="16" fill="#f4eee2" stroke="#8a6a10" />
+          <path d="M73,84 h20 M73,88 h20 M73,92 h14" stroke="#8a6a10" stroke-width="1" />
+        </g>
+      )}
+      {role === "producer" && (
+        <g>
+          <rect x="4" y="76" width="24" height="20" rx="2" fill="#8a5a2c" />
+          <rect x="7" y="72" width="18" height="7" rx="2" fill="#c9a227" />
+          <path d="M8,82 h16 M8,86 h16 M8,90 h10" stroke="#f4eee2" stroke-width="1.5" />
+        </g>
+      )}
+      {role === "critic" && (
+        <g>
+          <circle cx={50 + eyeDx} cy={eyeY} r="8" fill="none" stroke="#b06ad9" stroke-width="2" />
+          <path d={`M${50 + eyeDx + 6},${eyeY + 6} q6,10 2,20`} fill="none" stroke="#b06ad9" stroke-width="1.5" />
+          <path d="M78,94 q10,-16 16,-18 q-4,8 -10,20 Z" fill="#f4eee2" stroke="#b06ad9" stroke-width="1" />
+        </g>
+      )}
     </svg>
   );
 }

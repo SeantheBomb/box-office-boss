@@ -19,7 +19,8 @@ export function StandingsChart({ sim, compact }: { sim: Sim; compact?: boolean }
   const span = Math.max(1, max - min);
   const x = (i: number) => pad + (i / Math.max(1, maxWeeks - 1)) * (W - pad - 10);
   const y = (p: number) => H - 24 - ((p - min) / span) * (H - 40);
-  const ranked = [...studios].sort((a, b) => (b.totalRevenue - b.totalSpent) - (a.totalRevenue - a.totalSpent));
+  const reported = (s: (typeof studios)[0]) => s.totalRevenue - s.reportedSpend;
+  const ranked = [...studios].sort((a, b) => reported(b) - reported(a));
   return (
     <div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ background: "#faf6ec", border: "1px solid #d8d0bc" }}>
@@ -49,14 +50,13 @@ export function StandingsChart({ sim, compact }: { sim: Sim; compact?: boolean }
       <table>
         <tbody>
           {ranked.map((s) => {
-            const p = s.totalRevenue - s.totalSpent;
             const si = studios.indexOf(s);
             return (
-              <tr key={s.name}>
+              <tr key={s.name} style={s.bankrupt ? { opacity: 0.45, textDecoration: "line-through" } : undefined}>
                 <td style={{ color: LINE_COLORS[si % LINE_COLORS.length], fontWeight: "bold" }}>#{ranked.indexOf(s) + 1}</td>
-                <td>{s.name}{s.isPlayer ? " (you)" : ""}</td>
-                <td>{money(p)}</td>
-                <td>{money(s.cash)} cash</td>
+                <td>{s.name}{s.isPlayer ? " (you)" : ""}{s.bankrupt ? " †" : ""}</td>
+                <td>{money(reported(s))}</td>
+                <td>{s.isPlayer ? `${money(s.cash)} cash (private)` : "books sealed"}</td>
               </tr>
             );
           })}
@@ -99,10 +99,10 @@ export function FunnelReport({ sim, movie }: { sim: Sim; movie: Movie }) {
 }
 
 const PHASE_COLORS: Record<string, string> = {
-  script: "#8a8a5a", prepro: "#8a5a2c", production: "#a33327", post: "#2e5266", release: "#c9a227", distribute: "#3f6d3a",
+  script: "#8a8a5a", development: "#666", prepro: "#8a5a2c", production: "#a33327", post: "#2e5266", release: "#c9a227", distribute: "#3f6d3a",
 };
 
-export function ProductionBoard({ sim }: { sim: Sim }) {
+export function ProductionBoard({ sim, openDossier }: { sim: Sim; openDossier?: (kind: "movie" | "person", id: string) => void }) {
   const day = sim.state.day;
   const movies = sim.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled"].includes(m.phase));
   const horizon0 = day - 28;
@@ -119,8 +119,12 @@ export function ProductionBoard({ sim }: { sim: Sim }) {
         return (
           <div class="gantt-row" key={m.id}>
             <div>
-              <b>{m.title}</b>
-              <div style={{ color: "#666" }}>{m.genre} · {money(m.budget)}{m.setbackCount ? ` · ⚠${m.setbackCount}` : ""}</div>
+              <b style={openDossier ? { cursor: "pointer", textDecoration: "underline" } : undefined} onClick={() => openDossier?.("movie", m.id)}>{m.title}</b>
+              <div style={{ color: "#666" }}>
+                {m.genre} · {money(m.budget)}
+                {m.producerId ? ` · ${sim.person(m.producerId)?.name.split(" ")[0]}` : m.phase === "development" ? " · NEEDS PRODUCER" : ""}
+                {m.setbackCount ? ` · ⚠${m.setbackCount}` : ""}
+              </div>
             </div>
             <div class="gantt-track">
               <div class="gantt-bar" style={{ left: px(m.phaseStart), width: `calc(${px(Math.max(m.phaseEnd, m.phaseStart + 4))} - ${px(m.phaseStart)})`, background: PHASE_COLORS[m.phase] ?? "#777" }}>

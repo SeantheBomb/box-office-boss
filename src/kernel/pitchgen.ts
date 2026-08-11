@@ -21,10 +21,13 @@ export interface PitchData {
 
 export function mintTitle(rng: Rng, content: Content, state?: RunState): string {
   const P = content.pitches;
+  const inspWords: string[] = (content as any).inspiration?.titleWords ?? [];
   const make = () => {
     const grammar = rng.pick(P.titleGrammars as string[]);
     return grammar.replace(/\{([\w-]+)\}/g, (_, key) => {
       const bank = P.titleWords[key] as string[] | undefined;
+      // TMDB-harvested words blend into adj/noun slots for variety
+      if ((key === "adj" || key === "noun" || key === "noun2") && inspWords.length > 100 && rng.chance(0.45)) return rng.pick(inspWords);
       return bank ? rng.pick(bank) : key;
     });
   };
@@ -53,10 +56,18 @@ export function mintPitch(rng: Rng, content: Content, state: RunState, writer: P
   let theme2 = rng.pick(P.themes as string[]);
   if (theme2 === theme1) theme2 = rng.pick(P.themes as string[]);
   const frame = rng.pick(P.loglineFrames as string[]);
-  const logline = frame
+  let logline = frame
     .replace("{theme1}", theme1)
     .replace("{theme2}", theme2)
     .replace("{setPiece}", rng.pick(P.setPieces as string[]));
+  // comps sell pictures: name-drop two real movies when the bake is present
+  const realTitles: string[] = (content as any).inspiration?.titles ?? [];
+  if (realTitles.length > 100 && rng.chance(0.5)) {
+    const a = rng.pick(realTitles);
+    let b = rng.pick(realTitles);
+    if (b === a) b = rng.pick(realTitles);
+    logline += `. It's ${a} meets ${b}`;
+  }
   return {
     title: mintTitle(rng, content, state),
     genre,

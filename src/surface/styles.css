@@ -247,6 +247,122 @@ body { background: #171512; color: var(--ink); overflow: hidden; }
   padding: 8px 18px; z-index: 60; font-size: 14px; border-radius: 4px;
 }
 
+/* ---------- BossOS desktop ---------- */
+.desktop { flex: 1; position: relative; overflow: hidden; }
+.desk-backdrop {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, #3d4660 0%, #6c5a43 55%, var(--wood-dark) 56%, var(--wood) 100%);
+}
+.desk-backdrop.evening { background: linear-gradient(180deg, #2a2340 0%, #7a4a33 55%, #3a2818 56%, #55381f 100%); }
+.desk-backdrop .window-view {
+  position: absolute; top: 6%; left: 6%; width: 22%; height: 40%;
+  background: linear-gradient(180deg, #a8c8e8 0%, #e8c9a0 80%);
+  border: 10px solid var(--wood-dark);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+.desk-backdrop.evening .window-view { background: linear-gradient(180deg, #1c2a50 0%, #b06030 90%); }
+.desk-backdrop .logo {
+  position: absolute; top: 10%; right: 8%;
+  color: var(--gold); font-size: 28px; letter-spacing: 6px; font-variant: small-caps;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6); transform: rotate(-1deg);
+}
+.desk-backdrop .logo.stressed { transform: rotate(-4deg) translateY(3px); opacity: 0.8; }
+.desk-backdrop .logo.doomed { transform: rotate(-8deg) translateY(8px); opacity: 0.5; }
+
+.win {
+  position: absolute; display: flex; flex-direction: column;
+  background: #17191d; border: 1px solid #3a424c; border-radius: 6px 6px 4px 4px;
+  box-shadow: 0 16px 44px rgba(0,0,0,0.55);
+  min-width: 300px; min-height: 180px;
+}
+.win-title {
+  height: 30px; display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(#2f3540, #23272e); border-bottom: 2px solid var(--gold);
+  padding: 0 8px; cursor: grab; user-select: none; border-radius: 6px 6px 0 0;
+  color: var(--paper); font-size: 13px; font-variant: small-caps; letter-spacing: 1px;
+}
+.win-title:active { cursor: grabbing; }
+.win-badge {
+  background: var(--red); color: #fff; border-radius: 8px; font-size: 10px;
+  padding: 1px 6px; margin-left: 8px; letter-spacing: 0;
+}
+.win-btns button {
+  background: none; border: none; color: #9aa5b1; cursor: pointer; font-size: 13px; padding: 2px 7px;
+}
+.win-btns button:hover { color: #fff; background: #3a424c; }
+.win-body { flex: 1; overflow: auto; display: flex; flex-direction: column; }
+.win-resize {
+  position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, #55503f 50%);
+  border-radius: 0 0 4px 0;
+}
+.taskbar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40px; z-index: 300;
+  background: linear-gradient(#20242b, #171a1f); border-top: 1px solid #3a424c;
+  display: flex; align-items: center; gap: 4px; padding: 0 10px;
+}
+.taskbar-brand { color: var(--gold); font-variant: small-caps; letter-spacing: 2px; margin-right: 10px; font-size: 13px; }
+.taskbar button {
+  position: relative; background: #262b33; color: var(--paper); border: 1px solid #3a424c;
+  min-width: 38px; height: 28px; cursor: pointer; font-size: 15px; border-radius: 4px;
+}
+.taskbar button.open { border-color: var(--gold); background: #33383f; }
+.taskbar button.minned { font-size: 11px; padding: 0 8px; }
+.taskbar button:hover { background: #3a424c; }
+.task-badge {
+  position: absolute; top: -6px; right: -6px; background: var(--red); color: #fff;
+  border-radius: 8px; font-size: 9px; padding: 1px 5px;
+}
+.task-badge.dim { background: #556; }
+
+/* ---------- mail app ---------- */
+.mail { flex: 1; display: flex; flex-direction: column; background: #14161a; color: #cfd6cf; font-family: "Courier New", monospace; }
+.mail-toolbar {
+  display: flex; gap: 4px; padding: 6px 8px; background: #101216; border-bottom: 1px solid #333a44; flex-wrap: wrap; align-items: center;
+}
+.mail-toolbar button {
+  background: #1c2026; color: #9aa5b1; border: 1px solid #333a44; padding: 3px 8px; cursor: pointer; font-size: 11px;
+}
+.mail-toolbar button.on { background: #26303c; color: #fff; border-color: var(--gold); }
+.mail-toolbar input {
+  background: #0e1013; border: 1px solid #333a44; color: #cfd6cf; padding: 3px 8px; font-size: 11px; margin-left: auto; width: 130px;
+}
+.mail-split { flex: 1; display: flex; overflow: hidden; }
+.mail-split .inbox-list { width: 40%; min-width: 180px; }
+.inbox-list .item.needs-reply { border-left: 3px solid var(--green); }
+.reply-chip { background: var(--green); color: #fff; border-radius: 3px; font-size: 9px; padding: 0 4px; margin-left: 6px; }
+.doss-link { color: #8fb8e0; cursor: pointer; text-decoration: underline; }
+.doss-link:hover { color: #c0dcf5; }
+
+/* ---------- dossiers / windowed reports ---------- */
+.report-sheet.windowed { flex: 1; max-width: none; box-shadow: none; overflow-y: auto; }
+.doss h3 { display: flex; justify-content: space-between; align-items: baseline; }
+.doss-phase { font-size: 11px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px; }
+.doss section { margin-bottom: 12px; }
+.doss h4 { font-variant: small-caps; letter-spacing: 1px; border-bottom: 1px solid var(--paper2); margin-bottom: 4px; }
+.doss table td:first-child { color: #8a7a5a; width: 110px; vertical-align: top; }
+.plan-gantt { margin: 4px 0; }
+.plan-row { display: grid; grid-template-columns: 120px 1fr; gap: 6px; align-items: center; margin-bottom: 3px; font-size: 11px; }
+.plan-track { position: relative; height: 18px; background: var(--paper2); border-radius: 3px; }
+.plan-bar {
+  position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 3px;
+  color: #fff; font-size: 9px; padding: 3px 4px 0; white-space: nowrap; overflow: hidden;
+}
+
+/* ---------- calendar app ---------- */
+.calendar-app { flex: 1; padding: 10px; background: linear-gradient(180deg, #574632 0%, #3f3020 100%); color: var(--paper); overflow-y: auto; }
+.calendar-app .year-ribbon { margin-bottom: 10px; font-size: 11px; }
+.calendar-app .week-nav { display: flex; gap: 8px; margin: 8px 0; align-items: center; }
+.calendar-app .week-nav button { background: var(--wood-dark); color: var(--paper); border: 1px solid var(--gold); padding: 2px 10px; cursor: pointer; }
+.week-grid .head > div.wkend, .week-grid .row > div.wkend { background: #efe6d0; opacity: 0.75; }
+.cal-legend { margin-top: 6px; font-size: 11px; opacity: 0.8; }
+
+/* ---------- meeting counterpart stats ---------- */
+.counterpart-stats {
+  margin-top: 4px; font-size: 11px; color: #d8cfa8; background: rgba(0,0,0,0.55);
+  padding: 4px 10px; border-radius: 4px; max-width: 300px;
+}
+
 /* ---------- editor ---------- */
 .editor {
   position: fixed; inset: 0; background: #14161a; color: #d7dde3; z-index: 100;

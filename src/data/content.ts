@@ -9,12 +9,13 @@ import audience from "../../content/audience.json";
 import economy from "../../content/economy.json";
 import templates from "../../content/templates.json";
 import meetings from "../../content/meetings.json";
+import inspiration from "../../content/inspiration.json";
 import type { Content } from "../kernel/types";
 
-export const FILES = ["game", "people", "pitches", "setbacks", "audience", "economy", "templates", "meetings"] as const;
+export const FILES = ["game", "people", "pitches", "setbacks", "audience", "economy", "templates", "meetings", "inspiration"] as const;
 export type ContentFile = (typeof FILES)[number];
 
-const bundled: Record<ContentFile, any> = { game, people, pitches, setbacks, audience, economy, templates, meetings };
+const bundled: Record<ContentFile, any> = { game, people, pitches, setbacks, audience, economy, templates, meetings, inspiration };
 
 export function deepDefaults(target: any, defaults: any): any {
   if (target === undefined || target === null) return structuredClone(defaults);

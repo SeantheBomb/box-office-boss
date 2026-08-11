@@ -5,7 +5,8 @@
 import { useMemo, useState } from "preact/hooks";
 import { FILES, type ContentFile, assemble, loadDraft, saveDraft, clearDraft, fetchPublished } from "../data/content";
 import { Sim } from "../kernel/sim";
-import { autoplay } from "../kernel/autopilot";
+import { autoplay, disciplinedEmailPolicy, disciplinedMeetingPolicy } from "../kernel/autopilot";
+import { newSeededRun } from "../kernel/preseed";
 import { makeRng } from "../kernel/rng";
 import { mintWorld } from "../kernel/people";
 import { mintPitch } from "../kernel/pitchgen";
@@ -162,27 +163,11 @@ function SimLabTab({ draft }: { draft: any }) {
       const lines: string[] = [];
       let survived = 0, bankrupt = 0, fired = 0;
       for (let s = 1; s <= seeds; s++) {
-        const sim = Sim.newRun(content, s * 1000 + 7);
+        const sim = newSeededRun(content, s * 1000 + 7);
         autoplay(sim, {
           days: DAYS_PER_YEAR * years,
-          emailPolicy: (si, emailId, actions) => {
-            const active = si.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled"].includes(m.phase)).length;
-            if (actions.some((a) => a.id === "scheduleMeeting")) {
-              const em = si.state.inbox.find((e) => e.id === emailId);
-              return active < 3 && (em?.ctx.pitch?.minBudget ?? 0) < si.player.cash / 3 ? "scheduleMeeting" : "ignore";
-            }
-            for (const p of ["approvePrepro", "approveProduction", "expandBudget"]) if (actions.some((a) => a.id === p)) return p;
-            const vfxBids = actions.filter((a) => a.id.startsWith("vfx_"));
-            if (vfxBids.length)
-              return vfxBids.map((a) => ({ a, v: si.state.vfxStudios.find((v) => v.id === a.id.slice(4))! })).sort((x, y) => y.v.maxDailyShots - x.v.maxDailyShots)[0].a.id;
-            const mid = actions.find((a) => a.id.startsWith("mkt_standard") || a.id.startsWith("dist_standard"));
-            return (mid ?? actions[0]).id;
-          },
-          meetingPolicy: (si, choices) => {
-            const active = si.state.movies.filter((m) => m.studio === 0 && !["done", "cancelled"].includes(m.phase)).length;
-            if (active >= 3 && choices.some((c) => c.id === "pos_pass")) return "pos_pass";
-            return (choices.find((c) => c.id === "pos_greenlight") ?? choices[0]).id;
-          },
+          emailPolicy: disciplinedEmailPolicy(3),
+          meetingPolicy: disciplinedMeetingPolicy(3),
         });
         const st = sim.state;
         const released = st.movies.filter((m) => m.studio === 0 && m.releaseDay !== undefined).length;

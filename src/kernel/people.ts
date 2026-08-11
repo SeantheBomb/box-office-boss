@@ -15,10 +15,15 @@ function pid(role: string): string {
   return `${role}_${counter++}`;
 }
 
-export function mintName(rng: Rng, banks: any, gender: "M" | "F" | "NB"): string {
-  const first =
-    gender === "M" ? rng.pick(banks.firstM as string[]) : gender === "F" ? rng.pick(banks.firstF as string[]) : rng.pick(banks.firstN as string[]);
-  return `${first} ${rng.pick(banks.last as string[])}`;
+export function mintName(rng: Rng, banks: any, gender: "M" | "F" | "NB", inspiration?: any): string {
+  // TMDB-baked real name pools recombine into fictional people; hand-authored banks keep the cartoon end
+  const insp = inspiration?.namePools;
+  const useReal = insp?.first?.length > 50 && rng.chance(0.6);
+  const first = useReal
+    ? rng.pick(insp.first as string[])
+    : gender === "M" ? rng.pick(banks.firstM as string[]) : gender === "F" ? rng.pick(banks.firstF as string[]) : rng.pick(banks.firstN as string[]);
+  const last = insp?.last?.length > 50 && rng.chance(0.6) ? rng.pick(insp.last as string[]) : rng.pick(banks.last as string[]);
+  return `${first} ${last}`;
 }
 
 function mintGender(rng: Rng): "M" | "F" | "NB" {
@@ -32,7 +37,7 @@ export function mintPerson(rng: Rng, content: Content, role: Role): Person {
   const base: Person = {
     id: pid(role),
     role,
-    name: mintName(rng, P.nameBanks, gender),
+    name: mintName(rng, P.nameBanks, gender, (content as any).inspiration),
     gender,
     portraitSeed: rng.int(0, 2 ** 30),
     archetype: "",
