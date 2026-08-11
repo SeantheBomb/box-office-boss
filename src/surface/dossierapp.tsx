@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { Sim } from "../kernel/sim";
 import type { Person } from "../kernel/types";
 import { money } from "../kernel/text";
-import { MovieDossier, PersonDossier, StudioDossier, VfxDossier, type DossierKind, type OpenDossier } from "./dossiers";
+import { MovieDossier, PersonDossier, StudioDossier, VfxDossier, roleGlyph, type DossierKind, type OpenDossier } from "./dossiers";
 import { Portrait2 } from "./portraits2";
 import { audio } from "./audio";
 
@@ -187,14 +187,14 @@ function DossierHome({ sim, openDossier }: { sim: Sim; openDossier: OpenDossier 
       <h4 style={{ fontVariant: "small-caps", marginTop: 10 }}>Your Producers</h4>
       {staff.map((p) => (
         <p key={p.id} style={{ fontSize: 13 }}>
-          <a class="doss-link" onClick={() => openDossier("person", p.id)}>👤 {p.name}</a> — {sim.producerLoad(p.id)} active
+          <a class="doss-link" onClick={() => openDossier("person", p.id)}>{roleGlyph(p)} {p.name}</a> — {sim.producerLoad(p.id)} active
           {p.morale !== undefined && p.morale < 45 ? " · 👀 restless" : ""}
         </p>
       ))}
       <h4 style={{ fontVariant: "small-caps", marginTop: 10 }}>Available Talent</h4>
       {hot.map((p) => (
         <p key={p.id} style={{ fontSize: 13 }}>
-          <a class="doss-link" onClick={() => openDossier("person", p.id)}>👤 {p.name}</a> — {p.role}
+          <a class="doss-link" onClick={() => openDossier("person", p.id)}>{roleGlyph(p)} {p.name}</a> — {p.role}
         </p>
       ))}
     </div>
@@ -218,7 +218,7 @@ function PeopleShelf({ sim, openDossier }: { sim: Sim; openDossier: OpenDossier 
       </div>
       {people.map((p) => (
         <p key={p.id} style={{ fontSize: 13 }}>
-          <a class="doss-link" onClick={() => openDossier("person", p.id)}>👤 {p.name}</a>
+          <a class="doss-link" onClick={() => openDossier("person", p.id)}>{roleGlyph(p)} {p.name}</a>
           <span style={{ color: "#666", fontSize: 11 }}> — {stat(p)}</span>
         </p>
       ))}

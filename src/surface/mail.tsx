@@ -5,7 +5,7 @@ import type { Sim } from "../kernel/sim";
 import type { Email } from "../kernel/types";
 import { calDate, DOW } from "../kernel/types";
 import { StandingsChart, FunnelReport } from "./reports";
-import type { OpenDossier } from "./dossiers";
+import { roleGlyph, type OpenDossier } from "./dossiers";
 import { audio } from "./audio";
 
 const ROLE_ICON: Record<string, string> = {
@@ -110,7 +110,7 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
         {ctxPerson && (
           <>
             {" · "}
-            <a class="doss-link" onClick={() => openDossier("person", ctxPerson.id)}>👤 {ctxPerson.name}</a>
+            <a class="doss-link" onClick={() => openDossier("person", ctxPerson.id)}>{roleGlyph(ctxPerson)} {ctxPerson.name}</a>
           </>
         )}
       </div>
@@ -120,7 +120,7 @@ function ReadPane({ sim, email, bump, openDossier }: { sim: Sim; email: Email; b
           {(email.ctx.linkPeople ?? []).map((pid: string) => {
             const p = sim.person(pid);
             return p ? (
-              <a key={pid} class="doss-link" style={{ marginRight: 8 }} onClick={() => openDossier("person", pid)}>👤 {p.name}</a>
+              <a key={pid} class="doss-link" style={{ marginRight: 8 }} onClick={() => openDossier("person", pid)}>{roleGlyph(p)} {p.name}</a>
             ) : null;
           })}
           {(email.ctx.linkMovies ?? []).map((mid: string) => {

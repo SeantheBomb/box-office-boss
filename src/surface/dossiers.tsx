@@ -11,6 +11,17 @@ import { FunnelReport } from "./reports";
 export type DossierKind = "movie" | "person" | "studio" | "vfx";
 export type OpenDossier = (kind: DossierKind, id: string) => void;
 
+/** One icon per role, everywhere a person is linked. */
+export const ROLE_GLYPH: Record<string, string> = {
+  writer: "✍",
+  producer: "🎬",
+  director: "🎥",
+  cast: "⭐",
+  agent: "🕶",
+  critic: "📰",
+};
+export const roleGlyph = (p?: { role: string }) => (p ? ROLE_GLYPH[p.role] ?? "👤" : "👤");
+
 export function PersonLink({ sim, id, openDossier }: { sim: Sim; id?: string; openDossier: OpenDossier }) {
   const p = sim.person(id);
   if (!p) return <span>TBD</span>;
