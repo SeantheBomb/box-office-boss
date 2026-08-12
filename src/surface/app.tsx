@@ -19,6 +19,7 @@ import { MovieDossier, PersonDossier } from "./dossiers";
 import { DossierApp } from "./dossierapp";
 import { audio } from "./audio";
 import { MenuBar, Dock, ToastStack, Onboarding, type Profile, type Toast } from "./macos";
+import { recorder } from "./recorder";
 
 const APPS: { app: string; title: string; icon: string; w?: number; h?: number }[] = [
   { app: "mail", title: "✉ BossMail", icon: "✉", w: 640, h: 470 },
@@ -48,7 +49,13 @@ export function App({ content }: { content: Content }) {
     () => !!localStorage.getItem("bob.save") && localStorage.getItem("bob.lastSeenVersion") !== BUILD_VERSION && !detectStaleSave()
   );
   const [, setTick] = useState(0);
-  const bump = () => setTick((t) => t + 1);
+  // bump() is the universal "something changed" signal (mail replies, dossier actions,
+  // meetings, ticks) — syncing the recorder here catches every path in one place instead
+  // of hunting down each call site.
+  const bump = () => {
+    recorder.sync();
+    setTick((t) => t + 1);
+  };
   const [speed, setSpeed] = useState(1);
   const [meetingQueue, setMeetingQueue] = useState<SimEvent[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -135,10 +142,12 @@ export function App({ content }: { content: Content }) {
     }
   };
 
-  // reset notification watermarks whenever a different run takes over
+  // reset notification watermarks whenever a different run takes over, and begin/rotate
+  // the session recording — the previous run (if any) is auto-ended inside begin()
   useEffect(() => {
     notifyRef.current = { inboxLen: -1, day: -1 };
     checkNotifications();
+    if (sim) recorder.begin(sim);
   }, [sim]);
 
   const skipToNextEvent = () => {
@@ -163,10 +172,12 @@ export function App({ content }: { content: Content }) {
       skipDays: (n: number) => {
         const s = simRef.current;
         if (!s) return;
+        recorder.taint("debug-skipDays"); // the scripted-playtest entry point — never a real session
         const collected: SimEvent[] = [];
         for (let i = 0; i < n && !s.state.gameOver; i++) collected.push(...s.advanceDay());
         collectMeetings(collected);
         checkNotifications();
+        recorder.sync();
         setTick((t) => t + 1);
       },
     };
@@ -193,6 +204,7 @@ export function App({ content }: { content: Content }) {
         collectMeetings(s.advanceDay());
         if (s.state.day % s.content.game.autosaveEveryDays === 0 || s.state.gameOver) saveLocal(s);
         checkNotifications();
+        recorder.sync();
       }
       setTick((t) => t + 1);
     }, 100);
@@ -209,6 +221,7 @@ export function App({ content }: { content: Content }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.code === "KeyE") {
         e.preventDefault();
+        recorder.markDevOpened(); // editor access this session — flagged, not tainted (a dev poking around is still real play)
         setEditorOpen((v) => !v);
       }
       if (e.code === "Space" && !editorOpen && !drawerOpen && meetingQueue.length === 0) {

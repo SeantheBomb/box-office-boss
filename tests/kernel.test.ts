@@ -8,6 +8,7 @@ import { mintWorld } from "../src/kernel/people";
 import { computeFunnel } from "../src/kernel/audience";
 import { calDate, DAYS_PER_YEAR } from "../src/kernel/types";
 import { MeetingSession } from "../src/kernel/meetings";
+import { replaySession, checkDrift } from "../src/kernel/replay";
 
 const content = bundledContent();
 
@@ -224,5 +225,59 @@ describe("P7 careers", () => {
       expect(p.morale).toBeDefined();
       expect(p.weeklyRate).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("session replay", () => {
+  // Mirrors how the browser recorder works: the caretaker's own warmup decisions
+  // (inside newSeededRun) already populate state.decisions before the "player" acts,
+  // so a real recorder — and this test — only captures what's pushed AFTER that baseline.
+  function recordRun(seed: number, days: number, maxActive = 3) {
+    const sim = newSeededRun(content, seed);
+    const baseline = sim.state.decisions.length;
+    autoplay(sim, { days, emailPolicy: disciplinedEmailPolicy(maxActive), meetingPolicy: disciplinedMeetingPolicy(maxActive) });
+    return { sim, decisions: sim.state.decisions.slice(baseline), endDay: sim.state.day };
+  }
+
+  it("replays a full recorded career bit-for-bit, including quiet trailing days", () => {
+    const seed = 4242;
+    const { sim, decisions, endDay } = recordRun(seed, DAYS_PER_YEAR, 3);
+    expect(decisions.length).toBeGreaterThan(5); // sanity: the run actually did things
+
+    const outcome = replaySession({ seed, content, decisions, endDay });
+    expect(outcome.desync).toBeUndefined();
+    expect(outcome.consumed).toBe(outcome.total);
+    expect(outcome.sim.state.day).toBe(sim.state.day);
+    expect(stateHash(outcome.sim)).toBe(stateHash(sim));
+  });
+
+  it("replays identically across two independent runs (no hidden nondeterminism)", () => {
+    const seed = 8181;
+    const { decisions, endDay } = recordRun(seed, 200, 4);
+    const a = replaySession({ seed, content, decisions, endDay });
+    const b = replaySession({ seed, content, decisions, endDay });
+    expect(stateHash(a.sim)).toBe(stateHash(b.sim));
+  });
+
+  it("an abandoned session (partial log) replays cleanly up to where recording stopped", () => {
+    const seed = 606;
+    const { decisions } = recordRun(seed, 150, 3);
+    const half = decisions.slice(0, Math.max(1, Math.floor(decisions.length / 2)));
+    const endDay = half[half.length - 1].day;
+    const outcome = replaySession({ seed, content, decisions: half, endDay });
+    expect(outcome.desync).toBeUndefined();
+    expect(outcome.consumed).toBe(half.length);
+  });
+
+  it("checkDrift is silent when nothing changed, and catches it when content does", () => {
+    const seed = 333;
+    const { decisions, endDay } = recordRun(seed, 90, 3);
+    const checkpoints: { day: number; hash: string }[] = [];
+    replaySession({ seed, content, decisions, endDay }, (s) => checkpoints.push({ day: s.state.day, hash: stateHash(s) }));
+
+    expect(checkDrift({ seed, content, decisions, endDay }, checkpoints)).toEqual([]);
+
+    const mutated = { ...content, economy: { ...content.economy, startingCash: content.economy.startingCash * 2 } };
+    expect(checkDrift({ seed, content: mutated, decisions, endDay }, checkpoints).length).toBeGreaterThan(0);
   });
 });

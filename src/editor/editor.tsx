@@ -2,19 +2,20 @@
 // and TEMPLATES (content/*.json), never world instances. Draft overlay in localStorage,
 // publish to Cloudflare KV via /api/content.
 
-import { useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { FILES, type ContentFile, assemble, loadDraft, saveDraft, clearDraft, fetchPublished } from "../data/content";
 import { Sim } from "../kernel/sim";
-import { autoplay, disciplinedEmailPolicy, disciplinedMeetingPolicy } from "../kernel/autopilot";
+import { autoplay, disciplinedEmailPolicy, disciplinedMeetingPolicy, stateHash } from "../kernel/autopilot";
 import { newSeededRun } from "../kernel/preseed";
 import { makeRng } from "../kernel/rng";
 import { mintWorld } from "../kernel/people";
 import { mintPitch } from "../kernel/pitchgen";
 import { money } from "../kernel/text";
 import { Portrait2 } from "../surface/portraits2";
-import { DAYS_PER_YEAR } from "../kernel/types";
+import { DAYS_PER_YEAR, calDate } from "../kernel/types";
+import { replaySession, checkDrift, type DecisionContext, type SessionSnapshot } from "../kernel/replay";
 
-type Tab = ContentFile | "preview" | "simlab" | "publish";
+type Tab = ContentFile | "preview" | "simlab" | "publish" | "sessions";
 
 export function Editor({ onClose }: { onClose: () => void }) {
   const [tab, setTab] = useState<Tab>("people");
@@ -48,6 +49,7 @@ export function Editor({ onClose }: { onClose: () => void }) {
         <button class={tab === "preview" ? "on" : ""} onClick={() => setTab("preview")}>🎲 preview</button>
         <button class={tab === "simlab" ? "on" : ""} onClick={() => setTab("simlab")}>🧪 sim lab</button>
         <button class={tab === "publish" ? "on" : ""} onClick={() => setTab("publish")}>☁ publish</button>
+        <button class={tab === "sessions" ? "on" : ""} onClick={() => setTab("sessions")}>🎥 sessions</button>
         <div class="right">
           <button
             onClick={() => {
@@ -99,6 +101,7 @@ export function Editor({ onClose }: { onClose: () => void }) {
         {tab === "preview" && <PreviewTab draft={draft} />}
         {tab === "simlab" && <SimLabTab draft={draft} />}
         {tab === "publish" && <PublishTab draft={draft} setDraft={(d) => { setDraft(d); saveDraft(d); }} />}
+        {tab === "sessions" && <SessionsTab />}
       </div>
     </div>
   );
@@ -247,6 +250,249 @@ function PublishTab({ draft, setDraft }: { draft: any; setDraft: (d: any) => voi
         ⬇ pull live into drafts
       </button>
       <p style={{ marginTop: 10 }}>{status}</p>
+    </div>
+  );
+}
+
+// ---------- Sessions: PlayPen-style recorded-playsession browser + deterministic rewatch ----------
+// List costs zero KV GETs (terse metadata rides on the key itself); opening a session fetches
+// its full decision log once and replays it through the REAL kernel — no video, no screenshots,
+// just the exact simulation reproduced from seed + decisions, scrubbable day by day.
+
+interface SessionRow {
+  id: string;
+  p: string;
+  boss: string;
+  studio: string;
+  t: string;
+  d: number;
+  n: number;
+  rel: number;
+  g: string;
+  e: string;
+  x: number;
+  v: number;
+}
+
+function SessionsTab() {
+  const [password, setPassword] = useState(() => sessionStorage.getItem("bob.sessionsPw") ?? "");
+  const [sessions, setSessions] = useState<SessionRow[] | null>(null);
+  const [status, setStatus] = useState("");
+  const [showTainted, setShowTainted] = useState(false);
+  const [showDev, setShowDev] = useState(true);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const load = async () => {
+    setStatus("loading…");
+    try {
+      const res = await fetch(`/api/sessions?password=${encodeURIComponent(password)}`);
+      const j = await res.json();
+      if (!res.ok || !j.ok) {
+        setStatus(`✖ ${j.error ?? res.status}`);
+        return;
+      }
+      sessionStorage.setItem("bob.sessionsPw", password);
+      setSessions(j.sessions);
+      setStatus(`${j.sessions.length} session${j.sessions.length === 1 ? "" : "s"}`);
+    } catch (e) {
+      setStatus(`✖ ${e}`);
+    }
+  };
+
+  if (openId) return <SessionRewatch id={openId} password={password} onBack={() => setOpenId(null)} />;
+
+  const visible = (sessions ?? []).filter((s) => (showTainted || !s.x) && (showDev || !s.v));
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ padding: 12, display: "flex", gap: 10, alignItems: "center", borderBottom: "1px solid #2a3038", flexWrap: "wrap" }}>
+        password{" "}
+        <input type="password" value={password} onInput={(e) => setPassword((e.target as HTMLInputElement).value)} style={{ width: 160 }} />
+        <button class="runbtn" onClick={load} disabled={!password}>
+          ⬇ load sessions
+        </button>
+        <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+          <input type="checkbox" checked={showTainted} onChange={(e) => setShowTainted((e.target as HTMLInputElement).checked)} />
+          show tainted (bot/debug-driven)
+        </label>
+        <label style={{ fontSize: 12, display: "flex", gap: 4, alignItems: "center" }}>
+          <input type="checkbox" checked={showDev} onChange={(e) => setShowDev((e.target as HTMLInputElement).checked)} />
+          show dev (editor opened)
+        </label>
+        <span style={{ marginLeft: "auto", fontSize: 12, opacity: 0.7 }}>{status}</span>
+      </div>
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {!sessions ? (
+          <p style={{ padding: 16, opacity: 0.7 }}>Enter the editor password and load — this is who's actually been playing, on any machine.</p>
+        ) : (
+          <table style={{ width: "100%", fontSize: 12, borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ textAlign: "left", position: "sticky", top: 0, background: "#1c2026" }}>
+                <th style={{ padding: 6 }}>started</th>
+                <th style={{ padding: 6 }}>player</th>
+                <th style={{ padding: 6 }}>boss / studio</th>
+                <th style={{ padding: 6 }}>day</th>
+                <th style={{ padding: 6 }}>decisions</th>
+                <th style={{ padding: 6 }}>released</th>
+                <th style={{ padding: 6 }}>ended</th>
+                <th style={{ padding: 6 }}>flags</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((s) => (
+                <tr key={s.id} style={{ cursor: "pointer", borderBottom: "1px solid #2a3038" }} onClick={() => setOpenId(s.id)}>
+                  <td style={{ padding: 6 }}>{s.t ? new Date(s.t).toLocaleString() : "—"}</td>
+                  <td style={{ padding: 6 }} title={s.p}>
+                    {s.p.slice(0, 10)}
+                  </td>
+                  <td style={{ padding: 6 }}>
+                    {s.boss || "?"} / {s.studio || "?"}
+                  </td>
+                  <td style={{ padding: 6 }}>{s.d}</td>
+                  <td style={{ padding: 6 }}>{s.n}</td>
+                  <td style={{ padding: 6 }}>{s.rel}</td>
+                  <td style={{ padding: 6 }}>{s.g || s.e || "(open)"}</td>
+                  <td style={{ padding: 6 }}>
+                    {s.x ? "⚠bot " : ""}
+                    {s.v ? "🛠dev" : ""}
+                  </td>
+                </tr>
+              ))}
+              {!visible.length && (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: "center", padding: 24, opacity: 0.6 }}>
+                    Nobody's played yet — or everything's filtered out.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
+interface DaySnap {
+  day: number;
+  cash: number;
+  patience: number;
+  released: number;
+  gameOver?: string;
+}
+
+function SessionRewatch({ id, password, onBack }: { id: string; password: string; onBack: () => void }) {
+  const [status, setStatus] = useState("loading…");
+  const [days, setDays] = useState<DaySnap[]>([]);
+  const [decisionsByDay, setDecisionsByDay] = useState<Map<number, DecisionContext[]>>(new Map());
+  const [meta, setMeta] = useState<any>(null);
+  const [drift, setDrift] = useState<{ day: number; recordedHash: string; replayedHash: string }[] | null>(null);
+  const [cursor, setCursor] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/sessions?id=${id}&password=${encodeURIComponent(password)}`);
+        const j = await res.json();
+        if (cancelled) return;
+        if (!res.ok || !j.ok) {
+          setStatus(`✖ ${j.error ?? res.status}`);
+          return;
+        }
+        setMeta(j.meta);
+        // the session's OWN captured content — immune to whatever's published since, exactly
+        // what replaySession needs for a bit-for-bit reproduction
+        const snapshot: SessionSnapshot = { seed: j.seed, profile: j.profile, content: j.content, decisions: j.decisions, endDay: j.meta.endDay };
+        const dayList: DaySnap[] = [];
+        const decMap = new Map<number, DecisionContext[]>();
+        const outcome = replaySession(
+          snapshot,
+          (sim) => {
+            dayList.push({
+              day: sim.state.day,
+              cash: Math.round(sim.player.cash),
+              patience: Math.round(sim.state.patience),
+              released: sim.state.movies.filter((m) => m.studio === 0 && m.releaseDay !== undefined).length,
+              gameOver: sim.state.gameOver?.kind,
+            });
+          },
+          (ctx) => {
+            const arr = decMap.get(ctx.day) ?? [];
+            arr.push(ctx);
+            decMap.set(ctx.day, arr);
+          }
+        );
+        if (cancelled) return;
+        setDays(dayList);
+        setDecisionsByDay(decMap);
+        setCursor(dayList.length ? dayList.length - 1 : 0);
+        if (j.checkpoints?.length) setDrift(checkDrift(snapshot, j.checkpoints));
+        setStatus(
+          outcome.desync
+            ? `⚠ desync at day ${outcome.desync.day}: ${outcome.desync.reason}`
+            : `✔ replayed ${outcome.consumed}/${outcome.total} decisions across ${dayList.length} days`
+        );
+      } catch (e) {
+        if (!cancelled) setStatus(`✖ ${e}`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  const cur = days[cursor];
+  const d = cur ? calDate(cur.day) : null;
+
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", padding: 12, overflow: "hidden" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+        <button onClick={onBack}>← back to list</button>
+        <b>
+          {meta?.profile?.boss ?? "?"} / {meta?.profile?.studio ?? "?"}
+        </b>
+        {meta?.ua && (
+          <span style={{ fontSize: 11, opacity: 0.6 }} title={meta.ua}>
+            {meta.viewport?.w}×{meta.viewport?.h}
+          </span>
+        )}
+        <span style={{ marginLeft: "auto", fontSize: 12 }}>{status}</span>
+      </div>
+      {drift && (
+        <div style={{ fontSize: 12, marginBottom: 8, color: drift.length ? "#e08080" : "#8fd08f" }}>
+          {drift.length
+            ? `⚠ drift detected at ${drift.length} checkpoint(s) — first mismatch: day ${drift[0].day} (content or code changed since this was recorded)`
+            : "✔ exact reproduction — every checkpoint hash the live client recorded matches this replay"}
+        </div>
+      )}
+      {days.length > 0 && cur && (
+        <>
+          <input
+            type="range"
+            min={0}
+            max={days.length - 1}
+            value={cursor}
+            onInput={(e) => setCursor(parseInt((e.target as HTMLInputElement).value, 10))}
+            style={{ width: "100%" }}
+          />
+          <div style={{ fontSize: 12, marginBottom: 8 }}>
+            Day {cur.day} {d && `(WK ${d.week} YR ${d.year})`} · cash {money(cur.cash)} · patience {cur.patience} · released {cur.released}
+            {cur.gameOver ? ` · GAME OVER: ${cur.gameOver}` : ""}
+          </div>
+          <div style={{ flex: 1, overflowY: "auto", fontFamily: "monospace", fontSize: 12, background: "#0e1013", padding: 8 }}>
+            {days
+              .slice(0, cursor + 1)
+              .flatMap((dd) => (decisionsByDay.get(dd.day) ?? []).map((dec, i) => ({ dd, dec, i })))
+              .map(({ dd, dec, i }) => (
+                <div key={`${dd.day}-${i}`} style={{ padding: "3px 0", borderBottom: "1px solid #222" }}>
+                  <span style={{ opacity: 0.6 }}>day {dd.day}</span> — {dec.label}
+                </div>
+              ))}
+            {!decisionsByDay.size && <p style={{ opacity: 0.6 }}>No decisions recorded — either an instant abandon, or purely a spectator stretch.</p>}
+          </div>
+        </>
+      )}
     </div>
   );
 }

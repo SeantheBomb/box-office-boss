@@ -1488,7 +1488,7 @@ This column is never wrong. This column has been wrong twice this month.
     if (!em || em.actionTaken) return;
     em.actionTaken = actionId;
     em.read = true;
-    this.record("email", em.subject, actionId);
+    this.record("email", em.id, actionId); // ref = id (not subject) so replay can retarget the exact email
     const m = this.movie(em.ctx.movieId);
     const E = this.content.economy.phases;
     if (actionId === "scheduleMeeting") {
@@ -2133,7 +2133,7 @@ This column is never wrong. This column has been wrong twice this month.
     m.pressTours++;
     m.hype = Math.min(100, m.hype + P.hype);
     if (star) star.relationship -= P.relationshipHit;
-    this.record("pressTour", m.title, String(m.pressTours));
+    this.record("pressTour", m.id, "tour");
     return `${star?.name ?? "The cast"} hits the circuit. Hype +${P.hype}${star ? `, ${star.name.split(" ")[0]}'s patience −${P.relationshipHit}` : ""}.`;
   }
 }
